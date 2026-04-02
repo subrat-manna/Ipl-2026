@@ -1,3 +1,10 @@
+// ─── PLAYER NAMES LIST ───────────────────────────────────────────────────────
+// Add or remove names here. Push to GitHub to update.
+var PLAYER_NAMES = [
+  "Ronnie","Rakesh","MajorSaab","Sanju007","Papumav",
+  "Samrat","Nihar","Naruto","CheaterAbhii","Manna","Sipun"
+];
+
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
 function showPage(id) {
   document.querySelectorAll(".page").forEach(function(p){ p.classList.remove("active"); });
@@ -68,6 +75,62 @@ function renderMatchTabs() {
   }
 }
 
+// ─── NAME CHIPS ──────────────────────────────────────────────────────────────
+function renderNameChips(filter) {
+  var grid = document.getElementById("name-chips-grid");
+  var noFound = document.getElementById("no-name-found");
+  if(!grid) return;
+  var filtered = filter
+    ? PLAYER_NAMES.filter(function(n){ return n.toLowerCase().indexOf(filter.toLowerCase()) !== -1; })
+    : PLAYER_NAMES;
+  if(filtered.length === 0) {
+    grid.innerHTML = "";
+    if(noFound) noFound.style.display = "block";
+    return;
+  }
+  if(noFound) noFound.style.display = "none";
+  var selected = document.getElementById("reg-name").value;
+  grid.innerHTML = filtered.map(function(name) {
+    var isSelected = name === selected;
+    return '<button type="button" onclick="selectName('' + name + '')" ' +
+      'style="padding:10px 16px;border-radius:30px;font-family:Rajdhani;font-size:15px;font-weight:700;' +
+      'border:2px solid ' + (isSelected ? 'var(--gold)' : 'rgba(255,255,255,0.12)') + ';' +
+      'background:' + (isSelected ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.04)') + ';' +
+      'color:' + (isSelected ? 'var(--gold)' : 'var(--text)') + ';' +
+      'cursor:pointer;transition:all 0.2s;' +
+      (isSelected ? 'box-shadow:0 0 12px rgba(255,215,0,0.3);' : '') +
+      '">' + name + '</button>';
+  }).join("");
+}
+
+function selectName(name) {
+  document.getElementById("reg-name").value = name;
+  var display = document.getElementById("selected-name-display");
+  var text = document.getElementById("selected-name-text");
+  if(display) display.style.display = "block";
+  if(text) text.textContent = name;
+  // Re-render chips to show selection
+  var search = document.getElementById("name-search");
+  renderNameChips(search ? search.value : "");
+  playSound("click");
+}
+
+function clearNameSelection() {
+  document.getElementById("reg-name").value = "";
+  var display = document.getElementById("selected-name-display");
+  if(display) display.style.display = "none";
+  var search = document.getElementById("name-search");
+  if(search) search.value = "";
+  renderNameChips("");
+}
+
+function filterNames(val) {
+  renderNameChips(val);
+}
+window.selectName = selectName;
+window.clearNameSelection = clearNameSelection;
+window.filterNames = filterNames;
+
 // ─── REGISTER FLOW ───────────────────────────────────────────────────────────
 function goRegister() {
   var c=cfg(), p=pts();
@@ -80,6 +143,12 @@ function goRegister() {
     "Match #"+c.matchNumber+" · "+c.team1+" vs "+c.team2+" · "+c.time;
   ["reg-name","reg-phone","reg-superstition","reg-snack","reg-spend","reg-prediction"]
     .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=""; });
+  // Reset name chips
+  var display = document.getElementById("selected-name-display");
+  if(display) display.style.display = "none";
+  var search = document.getElementById("name-search");
+  if(search) search.value = "";
+  renderNameChips("");
   showPage("register");
 }
 
