@@ -110,10 +110,69 @@ function goPayment() {
     ? "upi://pay?pa="+encodeURIComponent(upiId)+"&pn=IPL+Contest&am="+c.fee+"&tn=IPL+Contest+Entry&cu=INR"
     : "#";
   document.getElementById("upi-link-anchor").href = upiLink;
+
+  // PhonePe link for iOS
+  var phonepeLink = upiId
+    ? "phonepe://pay?pa="+encodeURIComponent(upiId)+"&pn=Subrat%20Manna&am="+c.fee+"&tn=IPL+Contest&cu=INR"
+    : "#";
+  document.getElementById("phonepe-link").href = phonepeLink;
+
+  // Show UPI ID on payment page
+  var upiDisplay = document.getElementById("pay-upi-display");
+  if(upiDisplay) upiDisplay.textContent = upiId || "—";
+
+  // iOS amount
+  var iosAmt = document.getElementById("pay-ios-amount");
+  if(iosAmt) iosAmt.textContent = c.fee || 50;
+
+  // Store UPI ID for copy button
+  window._payUpiId = upiId;
+
   var qr = document.getElementById("qr-img");
-  qr.src = c.qr || "https://api.qrserver.com/v1/create-qr-code/?data="+encodeURIComponent(upiLink)+"&size=200x200&margin=10";
+  if(c.qr) qr.src = c.qr;
   showPage("payment");
 }
+
+function copyUpiId() {
+  // Read directly from the displayed UPI ID on the page — most reliable
+  var upiDisplay = document.getElementById("pay-upi-display");
+  var upi = (upiDisplay && upiDisplay.textContent.trim() !== "—") 
+    ? upiDisplay.textContent.trim() 
+    : (window._payUpiId || "");
+
+  if(!upi) { showToast("UPI ID not available","#e63946"); return; }
+
+  var copiedEl = document.getElementById("upi-copied");
+
+  function showCopied() {
+    if(copiedEl) { copiedEl.style.display = "block"; }
+    showToast("UPI ID copied! ✅");
+    setTimeout(function(){ if(copiedEl) copiedEl.style.display = "none"; }, 4000);
+  }
+
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(upi).then(function(){
+      showCopied();
+    }).catch(function(){
+      // Fallback if clipboard API fails
+      fallbackCopy(upi); showCopied();
+    });
+  } else {
+    fallbackCopy(upi); showCopied();
+  }
+}
+
+function fallbackCopy(text) {
+  var el = document.createElement("textarea");
+  el.value = text;
+  el.style.position = "fixed";
+  el.style.opacity = "0";
+  document.body.appendChild(el);
+  el.focus(); el.select();
+  try { document.execCommand("copy"); } catch(e) {}
+  document.body.removeChild(el);
+}
+window.copyUpiId = copyUpiId;
 
 function confirmPayment() {
   var c=cfg();
