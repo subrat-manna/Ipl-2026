@@ -11,21 +11,31 @@ function switchAdminSlot(slot) {
 function loadAdminFields() {
   var c=aCfg(), p=aPts();
   var sl=document.getElementById("admin-match-status");
-  var statusText = !c.active?"🔴 INACTIVE":c.registrationOpen?"🟢 REGISTRATION OPEN":"🟡 REG. CLOSED";
-  var statusColor= !c.active?"var(--red)":c.registrationOpen?"var(--green)":"var(--gold)";
+
+  // Determine correct status
+  var statusText, statusColor;
+  if(!c.active){
+    statusText="🔴 INACTIVE"; statusColor="var(--red)";
+  } else if(c.winner){
+    statusText="🏆 RESULT PUBLISHED"; statusColor="var(--gold)";
+  } else if(c.registrationOpen){
+    statusText="🟢 REGISTRATION OPEN"; statusColor="var(--green)";
+  } else {
+    statusText="🟡 REG. CLOSED"; statusColor="var(--gold)";
+  }
   if(sl){ sl.textContent=statusText; sl.style.color=statusColor; }
   $set("admin-match-no-display", c.active?"Match #"+(c.matchNumber||"—"):"Inactive");
 
-  // Update slot badges
+  // Slot badges
   ["match1","match2"].forEach(function(s){
     var d=slotData(s);
     var badgeId = s==="match1"?"admin-slot1-badge":"admin-slot2-badge";
     var el=document.getElementById(badgeId);
-    if(el){
-      if(!d.active){ el.textContent="Inactive"; el.className="slot-tag closed"; }
-      else if(d.registrationOpen){ el.textContent="Open"; el.className="slot-tag open"; }
-      else{ el.textContent="Reg.Closed"; el.className="slot-tag closed"; }
-    }
+    if(!el) return;
+    if(!d.active){       el.textContent="Inactive";    el.className="slot-tag closed"; }
+    else if(d.winner){   el.textContent="Result Done"; el.className="slot-tag closed"; }
+    else if(d.registrationOpen){ el.textContent="Open"; el.className="slot-tag open"; }
+    else{                el.textContent="Reg.Closed";  el.className="slot-tag closed"; }
   });
 
   $val("a-match-number",c.matchNumber||"");
@@ -87,41 +97,45 @@ function renderAdminHistory() {
   }).join("");
 }
 
-// ─── ADMIN ACTIONS ───────────────────────────────────────────────────────────
+// ─── SAVE MATCH INFO ─────────────────────────────────────────────────────────
 function saveMatch() {
   var c=aCfg();
   var matchNo=parseInt(document.getElementById("a-match-number").value)||c.matchNumber||1;
   var t1=document.getElementById("a-team1").value.trim();
   var t2=document.getElementById("a-team2").value.trim();
   if(!t1||!t2){ showToast("Enter both team names","#e63946"); return; }
-  slotRef(adminSlot).set({
-    matchNumber:matchNo, team1:t1, team2:t2,
+  var data={matchNumber:matchNo,team1:t1,team2:t2,
     time:document.getElementById("a-time").value.trim(),
     fee:parseInt(document.getElementById("a-fee").value)||50,
-    maxSpots:parseInt(document.getElementById("a-maxspots").value)||15
-  },{merge:true}).then(function(){
-    var w1=document.getElementById("w-opt1"),w2=document.getElementById("w-opt2");
-    if(w1){w1.value=t1;w1.textContent=t1;} if(w2){w2.value=t2;w2.textContent=t2;}
-    showToast("Match info saved!");
-  }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
+    maxSpots:parseInt(document.getElementById("a-maxspots").value)||15};
+  withLock(adminSlot, function(){
+    slots[adminSlot].data = Object.assign({},slots[adminSlot].data,data);
+    renderAll(); loadAdminFields();
+    return slotRef(adminSlot).set(data,{merge:true});
+  }).then(function(){ showToast("Match info saved!"); })
+  .catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
 }
 
 function savePayment() {
-  slotRef(adminSlot).set({
-    qr:document.getElementById("a-qr").value.trim(),
-    upi:document.getElementById("a-upi").value.trim()
-  },{merge:true}).then(function(){ showToast("Payment info saved!"); })
+  var data={qr:document.getElementById("a-qr").value.trim(),upi:document.getElementById("a-upi").value.trim()};
+  withLock(adminSlot, function(){
+    slots[adminSlot].data = Object.assign({},slots[adminSlot].data,data);
+    return slotRef(adminSlot).set(data,{merge:true});
+  }).then(function(){ showToast("Payment info saved!"); })
   .catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
 }
 
 function saveContest() {
-  slotRef(adminSlot).set({
-    contest:document.getElementById("a-contest").value.trim(),
-    redirectDelay:parseInt(document.getElementById("a-redirect-delay").value)||3
-  },{merge:true}).then(function(){ showToast("Contest link saved!"); })
+  var data={contest:document.getElementById("a-contest").value.trim(),
+    redirectDelay:parseInt(document.getElementById("a-redirect-delay").value)||3};
+  withLock(adminSlot, function(){
+    slots[adminSlot].data = Object.assign({},slots[adminSlot].data,data);
+    return slotRef(adminSlot).set(data,{merge:true});
+  }).then(function(){ showToast("Contest link saved!"); })
   .catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
 }
 
+// ─── SAVE RESULT ─────────────────────────────────────────────────────────────
 function saveResult() {
   var c=aCfg(), p=aPts();
   var winner=document.getElementById("a-winner").value;
@@ -132,43 +146,53 @@ function saveResult() {
     if(field==="rank")  updates[pid].contestRank = val!==""?parseInt(val):null;
     if(field==="prize") updates[pid].prizeMoney  = val!==""?parseInt(val):null;
   });
-  var batch=db.batch();
-  Object.keys(updates).forEach(function(pid){
-    var ref=db.collection("currentMatch").doc(adminSlot).collection("players").doc(pid);
-    batch.update(ref,updates[pid]);
-  });
-  batch.update(slotRef(adminSlot),{winner:winner});
-  batch.commit().then(function(){
-    // Build history players
-    var updated=p.map(function(pl){
-      return {name:pl.name,phone:pl.phone,
-        contestRank:updates[pl.id]?updates[pl.id].contestRank:pl.contestRank,
-        prizeMoney:updates[pl.id]?updates[pl.id].prizeMoney:pl.prizeMoney};
+
+  withLock(adminSlot, function(){
+    // Update local player data immediately
+    p.forEach(function(pl){
+      if(updates[pl.id]){
+        pl.contestRank = updates[pl.id].contestRank !== undefined ? updates[pl.id].contestRank : pl.contestRank;
+        pl.prizeMoney  = updates[pl.id].prizeMoney  !== undefined ? updates[pl.id].prizeMoney  : pl.prizeMoney;
+      }
     });
-    var ranked=updated.filter(function(pl){return pl.contestRank!=null;})
-      .sort(function(a,b){return parseInt(a.contestRank)-parseInt(b.contestRank);});
-    return historyDocRef(c.matchNumber).set({
-      matchNumber:c.matchNumber, match:c.team1+" vs "+c.team2,
-      date:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}),
-      time:c.time, winner:winner, playerCount:p.length,
-      first:ranked[0]?ranked[0].name:"",
-      firstPrize:ranked[0]?ranked[0].prizeMoney:null,
-      last:ranked[ranked.length-1]?ranked[ranked.length-1].name:"",
-      players:updated, updatedAt:Date.now()
+    // Update local slot data — always close registration when saving result
+    slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{
+      winner: winner,
+      registrationOpen: false
     });
-  }).then(function(){
-    // Auto-close registration when winner saved
-    if(winner){
-      return slotRef(adminSlot).set({registrationOpen:false},{merge:true}).then(function(){
-        slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:false,winner:winner});
-        renderAll(); loadAdminFields();
+    renderAll(); loadAdminFields();
+
+    // Write to Firestore
+    var batch=db.batch();
+    Object.keys(updates).forEach(function(pid){
+      var ref=db.collection("currentMatch").doc(adminSlot).collection("players").doc(pid);
+      batch.update(ref,updates[pid]);
+    });
+    // Always write winner + close registration together
+    batch.set(slotRef(adminSlot),{winner:winner, registrationOpen:false},{merge:true});
+
+    return batch.commit().then(function(){
+      // Save to history
+      var updated=p.map(function(pl){
+        return {name:pl.name,phone:pl.phone,contestRank:pl.contestRank,prizeMoney:pl.prizeMoney};
       });
-    }
-  }).then(function(){
-    showToast("Results saved & history updated! 🏆");
-  }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
+      var ranked=updated.filter(function(pl){return pl.contestRank!=null;})
+        .sort(function(a,b){return parseInt(a.contestRank)-parseInt(b.contestRank);});
+      return historyDocRef(c.matchNumber).set({
+        matchNumber:c.matchNumber, match:c.team1+" vs "+c.team2,
+        date:new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}),
+        time:c.time, winner:winner, playerCount:p.length,
+        first:ranked[0]?ranked[0].name:"",
+        firstPrize:ranked[0]?ranked[0].prizeMoney:null,
+        last:ranked[ranked.length-1]?ranked[ranked.length-1].name:"",
+        players:updated, updatedAt:Date.now()
+      });
+    });
+  }).then(function(){ showToast("Results saved & history updated! 🏆"); })
+  .catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
 }
 
+// ─── OPEN NEW MATCH ──────────────────────────────────────────────────────────
 function newMatch() {
   var c=aCfg();
   $set("nm-slot-label", adminSlot==="match1"?"Slot 1":"Slot 2");
@@ -192,47 +216,50 @@ function confirmNewMatch() {
   if(!t1||!t2){ showToast("Enter both team names","#e63946"); return; }
   var btn=document.getElementById("nm-confirm-btn");
   btn.disabled=true; btn.textContent="Opening…";
-  slotPlayers(adminSlot).get().then(function(snap){
-    var batch=db.batch();
-    snap.docs.forEach(function(d){ batch.delete(d.ref); });
-    var c=aCfg();
-    var newData={
-      matchNumber:matchNo,team1:t1,team2:t2,time:time,fee:fee,maxSpots:maxSpots,
-      active:true,registrationOpen:true,winner:"",
-      qr:c.qr||"",upi:c.upi||"",contest:c.contest||"",redirectDelay:c.redirectDelay||3
-    };
-    batch.set(slotRef(adminSlot),newData);
-    return batch.commit().then(function(){return newData;});
-  }).then(function(newData){
-    slots[adminSlot].data=newData;
-    slots[adminSlot].players=[];
-    activeSlot=adminSlot;
+  var c=aCfg();
+  var newData={matchNumber:matchNo,team1:t1,team2:t2,time:time,fee:fee,maxSpots:maxSpots,
+    active:true,registrationOpen:true,winner:"",
+    qr:c.qr||"",upi:c.upi||"",contest:c.contest||"",redirectDelay:c.redirectDelay||3};
+
+  withLock(adminSlot, function(){
+    // Update local state first
+    slots[adminSlot].data = newData;
+    slots[adminSlot].players = [];
+    activeSlot = adminSlot;
     renderAll(); loadAdminFields();
     showPage("admin");
     showToast("Match #"+matchNo+": "+t1+" vs "+t2+" OPEN in "+(adminSlot==="match1"?"Slot 1":"Slot 2")+"! ✅");
+    // Delete old players + write new match doc
+    return slotPlayers(adminSlot).get().then(function(snap){
+      var batch=db.batch();
+      snap.docs.forEach(function(d){ batch.delete(d.ref); });
+      batch.set(slotRef(adminSlot),newData);
+      return batch.commit();
+    });
   }).catch(function(e){
-    console.error("confirmNewMatch",e);
     showToast("Error: "+e.message,"#e63946");
     btn.disabled=false; btn.textContent="🏏 Open This Match →";
   });
 }
 
+// ─── CLOSE REGISTRATION ──────────────────────────────────────────────────────
 function closeRegistration() {
   var c=aCfg();
   if(!c.active){ showToast("This slot has no active match.","#e63946"); return; }
   if(!c.registrationOpen){ showToast("Registration is already closed.","#e63946"); return; }
   openConfirm(
     "Close Registration",
-    "Stop new registrations for Match #"+c.matchNumber+" ("+c.team1+" vs "+c.team2+").",
+    "Stop new registrations for Match #"+c.matchNumber+" ("+c.team1+" vs "+c.team2+"). Players already joined will stay.",
     "🔒 Close Registration",
     function(){
-      // Update local state FIRST so UI reflects immediately
-      slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:false});
-      renderAll(); loadAdminFields();
-      showToast("Registration closed.");
-      // Then write to Firestore (onSnapshot will fire but local state already correct)
-      slotRef(adminSlot).update({registrationOpen:false}).catch(function(e){
-        // Rollback if write fails
+      withLock(adminSlot, function(){
+        // Update local state immediately
+        slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:false});
+        renderAll(); loadAdminFields();
+        showToast("Registration closed for Match #"+c.matchNumber+".");
+        return slotRef(adminSlot).update({registrationOpen:false});
+      }).catch(function(e){
+        // Rollback on error
         slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:true});
         renderAll(); loadAdminFields();
         showToast("Error: "+e.message,"#e63946");
@@ -241,49 +268,55 @@ function closeRegistration() {
   );
 }
 
+// ─── RESET SLOT ──────────────────────────────────────────────────────────────
 function resetSlot() {
-  var slotLabel = adminSlot==="match1"?"Slot 1":"Slot 2";
+  var slotLabel=adminSlot==="match1"?"Slot 1":"Slot 2";
   openConfirm(
     "Reset "+slotLabel,
-    "Clear all players and hide "+slotLabel+" from users. Make sure you have saved results to history first.",
+    "Clear all players and hide "+slotLabel+" from users. Save results to history first.",
     "🗑 Reset "+slotLabel,
     function(){
-      var blank = defaultSlot();
-      // Update local state immediately
-      slots[adminSlot].data = blank;
-      slots[adminSlot].players = [];
-      // Fix activeSlot if needed
-      if(activeSlot===adminSlot){
-        var other = adminSlot==="match1"?"match2":"match1";
-        if(slots[other].data && slots[other].data.active) activeSlot=other;
-      }
-      renderAll(); loadAdminFields();
-      showToast(slotLabel+" reset — hidden from users.");
-      // Write to Firestore in background
-      slotPlayers(adminSlot).get().then(function(snap){
-        var batch=db.batch();
-        snap.docs.forEach(function(d){ batch.delete(d.ref); });
-        batch.set(slotRef(adminSlot),blank);
-        return batch.commit();
-      }).catch(function(e){ console.error("resetSlot write error:",e); });
+      var blank=defaultSlot();
+      withLock(adminSlot, function(){
+        // Update local state immediately
+        slots[adminSlot].data = blank;
+        slots[adminSlot].players = [];
+        // If user was viewing this slot, switch to the other if active
+        if(activeSlot===adminSlot){
+          var other=adminSlot==="match1"?"match2":"match1";
+          if(slots[other].data && slots[other].data.active) activeSlot=other;
+        }
+        renderAll(); loadAdminFields();
+        showToast(slotLabel+" has been reset and hidden from users.");
+        // Delete all players + reset slot doc
+        return slotPlayers(adminSlot).get().then(function(snap){
+          var batch=db.batch();
+          snap.docs.forEach(function(d){ batch.delete(d.ref); });
+          batch.set(slotRef(adminSlot),blank);
+          return batch.commit();
+        });
+      }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
     }
   );
 }
 
+// ─── CLEAR PLAYERS ───────────────────────────────────────────────────────────
 function clearPlayersOnly() {
   openConfirm("Clear Players","Delete all current players for this slot without affecting history.","🗑 Clear",function(){
-    slotPlayers(adminSlot).get().then(function(snap){
-      var batch=db.batch();
-      snap.docs.forEach(function(d){ batch.delete(d.ref); });
-      return batch.commit();
-    }).then(function(){
+    withLock(adminSlot, function(){
       slots[adminSlot].players=[];
       renderAll(); loadAdminFields();
-      showToast("Players cleared!");
-    }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
+      return slotPlayers(adminSlot).get().then(function(snap){
+        var batch=db.batch();
+        snap.docs.forEach(function(d){ batch.delete(d.ref); });
+        return batch.commit();
+      });
+    }).then(function(){ showToast("Players cleared!"); })
+    .catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
   });
 }
 
+// ─── CLEAR HISTORY ───────────────────────────────────────────────────────────
 function clearHistory() {
   openModal(
     "Delete ALL History",
@@ -291,7 +324,9 @@ function clearHistory() {
     "🗑 Delete Forever",
     function(){
       var batch=db.batch();
-      historyList.forEach(function(m){ batch.delete(db.collection("history").doc(String(m.matchNumber))); });
+      historyList.forEach(function(m){
+        batch.delete(db.collection("history").doc(String(m.matchNumber)));
+      });
       batch.commit().then(function(){
         historyList=[]; renderHistory(); renderAdminHistory();
         showToast("History deleted");

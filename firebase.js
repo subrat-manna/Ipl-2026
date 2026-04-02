@@ -40,6 +40,30 @@ function defaultSlot() {
            active:false, registrationOpen:false, winner:"" };
 }
 
+// ─── WRITE LOCK ───────────────────────────────────────────────────────────────
+// When writeLock[slot] is true, onSnapshot won't overwrite local state.
+// This prevents the race where Firestore cache fires stale data after a write.
+var writeLock = { match1: false, match2: false };
+
+function withLock(slot, fn) {
+  writeLock[slot] = true;
+  var result;
+  try { result = fn(); } catch(e) { writeLock[slot] = false; return Promise.reject(e); }
+  // If fn() returned a promise, wait for it then release lock
+  if(result && typeof result.then === 'function') {
+    return result.then(function(v){
+      setTimeout(function(){ writeLock[slot] = false; }, 1500);
+      return v;
+    }, function(e){
+      writeLock[slot] = false;
+      return Promise.reject(e);
+    });
+  }
+  // fn() was synchronous
+  setTimeout(function(){ writeLock[slot] = false; }, 1500);
+  return Promise.resolve(result);
+}
+
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 function boot() {
   var inits = ["match1","match2"].map(function(slot){
@@ -51,15 +75,20 @@ function boot() {
   Promise.all(inits).then(function(){
     ["match1","match2"].forEach(function(slot){
       slotRef(slot).onSnapshot(function(s){
-        slots[slot].data = s.data() || defaultSlot();
-        renderAll(); renderMatchTabs();
-        if(document.getElementById("page-admin").classList.contains("active")) loadAdminFields();
+        // Only update if no write is in flight for this slot
+        if(!writeLock[slot]) {
+          slots[slot].data = s.data() || defaultSlot();
+          renderAll();
+          if(document.getElementById("page-admin").classList.contains("active")) loadAdminFields();
+        }
       }, function(e){ console.error(slot,e); });
 
       slotPlayers(slot).onSnapshot(function(s){
-        slots[slot].players = s.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
-        renderAll(); renderMatchTabs();
-        if(document.getElementById("page-admin").classList.contains("active")) loadAdminFields();
+        if(!writeLock[slot]) {
+          slots[slot].players = s.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+          renderAll();
+          if(document.getElementById("page-admin").classList.contains("active")) loadAdminFields();
+        }
       }, function(e){ console.error(slot+"players",e); });
     });
 
