@@ -516,7 +516,7 @@ function startMusic() {
     if (!musicAudio) {
       musicAudio = new Audio(MUSIC_URL);
       musicAudio.loop = true;
-      musicAudio.volume = 0.4;
+      musicAudio.volume = 0.1;
     }
     musicAudio.play().catch(function(e){ console.log("music play error:", e); });
   } catch(e) { console.log("music error:", e); }
