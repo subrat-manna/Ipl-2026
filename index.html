@@ -77,22 +77,7 @@
   <div class="page-title">Your Details</div>
   <div class="page-sub">Just your name to enter. Everything else is for fun 😄</div>
   <div class="card">
-    <div class="form-group">
-      <label class="form-label">Select Your Name <span style="color:var(--red)">*</span></label>
-      <!-- Hidden input that holds the selected name — rest of app reads this -->
-      <input type="hidden" id="reg-name">
-      <!-- Search box -->
-      <input class="form-input" id="name-search" type="text" placeholder="🔍 Search name..." autocomplete="off"
-        oninput="filterNames(this.value)" style="margin-bottom:12px;">
-      <!-- Selected name display -->
-      <div id="selected-name-display" style="display:none;background:rgba(255,215,0,.1);border:1.5px solid var(--gold);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:15px;font-weight:700;color:var(--gold);text-align:center;">
-        ✅ Selected: <span id="selected-name-text"></span>
-        <span onclick="clearNameSelection()" style="float:right;cursor:pointer;color:var(--muted);font-size:12px;">✕ Change</span>
-      </div>
-      <!-- Name chips grid -->
-      <div id="name-chips-grid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-      <div id="no-name-found" style="display:none;color:var(--muted);font-size:13px;text-align:center;padding:10px;">No name found</div>
-    </div>
+    <div class="form-group"><label class="form-label">Full Name <span style="color:var(--red)">*</span></label><input class="form-input" id="reg-name" type="text" placeholder="Enter your name"></div>
     <div class="form-group"><label class="form-label">Phone Number <span class="optional-tag">(optional)</span></label><input class="form-input" id="reg-phone" type="tel" placeholder="10-digit mobile number" maxlength="10"></div>
   </div>
   <div class="card" style="padding:16px;">
