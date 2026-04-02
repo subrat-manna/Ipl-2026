@@ -101,21 +101,60 @@
 <div id="page-payment" class="page">
   <div class="steps"><div class="step done"></div><div class="step active"></div><div class="step"></div></div>
   <div class="page-title">Pay Entry Fee</div>
-  <div class="page-sub">Scan QR or use UPI link to complete payment</div>
-  <div class="card">
-    <div class="qr-container">
-      <div class="qr-frame"><img id="qr-img" src="" alt="UPI QR Code" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect width=%22200%22 height=%22200%22 fill=%22%23f5f5f5%22/><text x=%22100%22 y=%22105%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2212%22 fill=%22%23888%22>Set QR in Admin</text></svg>'"></div>
-      <div class="qr-amount">₹<span id="pay-amount">50</span></div>
-      <div class="qr-note" id="pay-name-note">Pay to complete registration</div>
-      <a class="upi-link-btn" id="upi-link-anchor" href="#" target="_blank"><span>💳</span> Pay via UPI App</a>
-    </div>
-  </div>
+
+  <!-- Player + Amount info -->
   <div class="card">
     <div class="info-row"><span class="info-key">Name</span><span class="info-val" id="pay-name-show">—</span></div>
     <div class="info-row"><span class="info-key">Phone</span><span class="info-val" id="pay-phone-show">—</span></div>
     <div class="info-row"><span class="info-key">Amount</span><span class="info-val">₹<span id="pay-amt-show">50</span></span></div>
   </div>
-  <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;">After paying, tap below. You'll be redirected to the contest app automatically.</div>
+
+  <!-- UPI ID + Amount display -->
+  <div class="card" style="text-align:center;">
+    <div style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Pay to UPI ID</div>
+    <div style="font-size:20px;font-weight:700;color:var(--gold);margin-bottom:4px;" id="pay-upi-display">—</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">SUBRAT MANNA</div>
+    <div style="font-size:40px;font-weight:900;color:white;margin-bottom:4px;">₹<span id="pay-amount">50</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="pay-name-note">Entry Fee</div>
+
+    <!-- QR Code -->
+    <div class="qr-frame" style="margin:0 auto 16px;">
+      <img id="qr-img" src="https://raw.githubusercontent.com/subrat-manna/Ipl-2026/main/qr.png" alt="UPI QR Code"
+        onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect width=%22200%22 height=%22200%22 fill=%22%23f5f5f5%22/><text x=%22100%22 y=%22105%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2212%22 fill=%22%23888%22>QR Not Found</text></svg>'">
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Scan with any UPI app</div>
+  </div>
+
+  <!-- ANDROID: UPI deep link -->
+  <a class="cta-btn green-btn" id="upi-link-anchor" href="#" target="_blank" style="text-decoration:none;display:block;">
+    📱 Pay via UPI App (Android)
+  </a>
+
+  <!-- iOS: Steps + Copy + PhonePe -->
+  <div class="card" style="text-align:left;">
+    <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;text-align:center;">🍎 iPhone Users</div>
+    <div style="font-size:13px;color:var(--muted);line-height:2.2;">
+      <span style="color:var(--gold);font-weight:700;">Step 1</span> — Tap "Copy UPI ID" below<br>
+      <span style="color:var(--gold);font-weight:700;">Step 2</span> — Tap "Open PhonePe" button<br>
+      <span style="color:var(--gold);font-weight:700;">Step 3</span> — Go to Send Money → UPI ID<br>
+      <span style="color:var(--gold);font-weight:700;">Step 4</span> — Paste UPI ID and pay ₹<span id="pay-ios-amount">50</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button onclick="copyUpiId()" style="flex:1;padding:12px;border-radius:10px;font-family:Rajdhani;font-size:14px;font-weight:700;background:var(--gold);color:#000;border:none;cursor:pointer;">
+        📋 Copy UPI ID
+      </button>
+      <a id="phonepe-link" href="#" style="flex:1;padding:12px;border-radius:10px;font-family:Rajdhani;font-size:14px;font-weight:700;background:#5f259f;color:white;border:none;cursor:pointer;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;">
+        💜 Open PhonePe
+      </a>
+    </div>
+    <div id="upi-copied" style="display:none;color:var(--green);font-size:13px;text-align:center;margin-top:8px;">
+      ✅ Copied! Now tap Open PhonePe
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;">
+    After paying, tap below to confirm your entry.
+  </div>
   <button class="cta-btn green-btn" id="pay-confirm-btn" onclick="window.confirmPayment()">✅ I've Paid — Go to Contest →</button>
   <button class="cta-btn secondary" onclick="window.showPage('register')" style="margin-top:8px;">← Back</button>
 </div>
