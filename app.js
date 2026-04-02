@@ -60,8 +60,12 @@ function renderMatchTabs() {
         ((!s2.registrationOpen||s2.winner)?'<span class="slot-tag closed">🔒 Closed</span>':'<span class="slot-tag open">🟢 Open</span>')+
       '</button>';
   });
-  if(s1.active && !s2.active && activeSlot==="match2") activeSlot="match1";
-  if(s2.active && !s1.active && activeSlot==="match1") activeSlot="match2";
+  // Only auto-switch if current activeSlot became inactive
+  var curData = slotData(activeSlot);
+  if(!curData.active){
+    if(s1.active) activeSlot="match1";
+    else if(s2.active) activeSlot="match2";
+  }
 }
 
 // ─── REGISTER FLOW ───────────────────────────────────────────────────────────
@@ -138,6 +142,11 @@ function confirmPayment() {
 // ─── RENDER ───────────────────────────────────────────────────────────────────
 function renderAll() {
   if(!slots.match1.data && !slots.match2.data) return;
+  // Make sure activeSlot has active data
+  if(!slotData(activeSlot).active){
+    if(slotData("match1").active) activeSlot="match1";
+    else if(slotData("match2").active) activeSlot="match2";
+  }
   var c=cfg(), p=pts();
   var maxS=c.maxSpots||15, count=p.length;
   $set("home-match-no", c.active ? "Match #"+(c.matchNumber||"—") : "No Active Match");

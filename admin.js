@@ -220,42 +220,52 @@ function confirmNewMatch() {
 function closeRegistration() {
   var c=aCfg();
   if(!c.active){ showToast("This slot has no active match.","#e63946"); return; }
+  if(!c.registrationOpen){ showToast("Registration is already closed.","#e63946"); return; }
   openConfirm(
     "Close Registration",
-    "Stop new registrations for Match #"+c.matchNumber+" ("+c.team1+" vs "+c.team2+"). Existing players stay. You can still update results later.",
+    "Stop new registrations for Match #"+c.matchNumber+" ("+c.team1+" vs "+c.team2+").",
     "🔒 Close Registration",
     function(){
-      slotRef(adminSlot).set({registrationOpen:false},{merge:true}).then(function(){
-        slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:false});
+      // Update local state FIRST so UI reflects immediately
+      slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:false});
+      renderAll(); loadAdminFields();
+      showToast("Registration closed.");
+      // Then write to Firestore (onSnapshot will fire but local state already correct)
+      slotRef(adminSlot).update({registrationOpen:false}).catch(function(e){
+        // Rollback if write fails
+        slots[adminSlot].data = Object.assign({},slots[adminSlot].data,{registrationOpen:true});
         renderAll(); loadAdminFields();
-        showToast("Registration closed. Users can no longer join this match.");
-      }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
+        showToast("Error: "+e.message,"#e63946");
+      });
     }
   );
 }
 
 function resetSlot() {
+  var slotLabel = adminSlot==="match1"?"Slot 1":"Slot 2";
   openConfirm(
-    "Reset Slot",
-    "Completely reset "+(adminSlot==="match1"?"Slot 1":"Slot 2")+". Clears all players and hides the match from users.",
-    "🗑 Reset Slot",
+    "Reset "+slotLabel,
+    "Clear all players and hide "+slotLabel+" from users. Make sure you have saved results to history first.",
+    "🗑 Reset "+slotLabel,
     function(){
+      var blank = defaultSlot();
+      // Update local state immediately
+      slots[adminSlot].data = blank;
+      slots[adminSlot].players = [];
+      // Fix activeSlot if needed
+      if(activeSlot===adminSlot){
+        var other = adminSlot==="match1"?"match2":"match1";
+        if(slots[other].data && slots[other].data.active) activeSlot=other;
+      }
+      renderAll(); loadAdminFields();
+      showToast(slotLabel+" reset — hidden from users.");
+      // Write to Firestore in background
       slotPlayers(adminSlot).get().then(function(snap){
         var batch=db.batch();
         snap.docs.forEach(function(d){ batch.delete(d.ref); });
-        var blank=defaultSlot();
         batch.set(slotRef(adminSlot),blank);
-        return batch.commit().then(function(){return blank;});
-      }).then(function(blank){
-        slots[adminSlot].data=blank;
-        slots[adminSlot].players=[];
-        if(activeSlot===adminSlot){
-          var other=adminSlot==="match1"?"match2":"match1";
-          activeSlot=slots[other].data&&slots[other].data.active?other:adminSlot;
-        }
-        renderAll(); loadAdminFields();
-        showToast((adminSlot==="match1"?"Slot 1":"Slot 2")+" reset — hidden from users.");
-      }).catch(function(e){ showToast("Error: "+e.message,"#e63946"); });
+        return batch.commit();
+      }).catch(function(e){ console.error("resetSlot write error:",e); });
     }
   );
 }

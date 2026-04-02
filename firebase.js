@@ -12,6 +12,8 @@ var ADMIN_PASS = "ipl2024";
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
+// Use long polling for better mobile reliability
+try { db.settings({ experimentalForceLongPolling: true }); } catch(e) {}
 
 // ─── REFS ─────────────────────────────────────────────────────────────────────
 function slotRef(slot)       { return db.collection("currentMatch").doc(slot); }
