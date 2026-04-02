@@ -506,39 +506,40 @@ function playSound(type){
 }
 
 // ─── MUSIC ────────────────────────────────────────────────────────────────────
-var musicPlaying=false, musicGain=null;
-function startMusic(){
-  try{
-    var ctx=getAudioCtx();
-    musicGain=ctx.createGain(); musicGain.gain.setValueAtTime(0,ctx.currentTime); musicGain.connect(ctx.destination);
-    musicGain.gain.linearRampToValueAtTime(.07,ctx.currentTime+1.8);
-    var conv=ctx.createConvolver(),revG=ctx.createGain(); revG.gain.value=.3;
-    var buf=ctx.createBuffer(2,ctx.sampleRate*2,ctx.sampleRate);
-    for(var c=0;c<2;c++){var d=buf.getChannelData(c);for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);}
-    conv.buffer=buf; conv.connect(revG); revG.connect(musicGain);
-    var BPM=96,beat=60/BPM,bar=beat*4;
-    function st(b,s){return b*Math.pow(2,s/12);}
-    var chords=[[293,370,440],[392,494,587],[440,554,659],[392,494,587]];
-    var bassRoots=[147,196,220,196];
-    var arpPats=[[0,4,7,12,16,12,7,4],[0,4,7,11,14,11,7,4],[0,4,8,12,16,12,8,4],[0,4,7,11,14,11,7,4]];
-    var arpRoots=[293,392,440,392];
-    function playChord(ci,t){if(!musicPlaying)return;chords[ci%chords.length].forEach(function(f){[1,2].forEach(function(m,mi){var o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f*m;var vol=mi===0?.1:.03;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+beat*.8);g.gain.linearRampToValueAtTime(vol,t+bar-beat*.5);g.gain.linearRampToValueAtTime(0,t+bar+beat*.5);o.connect(g);g.connect(musicGain);o.connect(conv);o.start(t);o.stop(t+bar+beat+.1);});});}
-    function playArp(ci,t){if(!musicPlaying)return;arpPats[ci%arpPats.length].forEach(function(s,i){var f=st(arpRoots[ci%arpRoots.length],s),ti=t+i*beat*.5,o=ctx.createOscillator(),g=ctx.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(0,ti);g.gain.linearRampToValueAtTime(.07,ti+.04);g.gain.linearRampToValueAtTime(0,ti+beat*.42);o.connect(g);g.connect(musicGain);o.connect(conv);o.start(ti);o.stop(ti+beat*.5+.05);});}
-    function playBass(ci,t){if(!musicPlaying)return;var root=bassRoots[ci%bassRoots.length],fifth=st(root,7);[{f:root,o:0,d:beat*.9},{f:fifth,o:beat,d:beat*.5},{f:root,o:beat*2,d:beat*.9},{f:fifth,o:beat*3,d:beat*.5}].forEach(function(n){var o=ctx.createOscillator(),g=ctx.createGain(),ti=t+n.o;o.type="sine";o.frequency.value=n.f;g.gain.setValueAtTime(0,ti);g.gain.linearRampToValueAtTime(.13,ti+.06);g.gain.linearRampToValueAtTime(.07,ti+n.d*.6);g.gain.linearRampToValueAtTime(0,ti+n.d);o.connect(g);g.connect(musicGain);o.start(ti);o.stop(ti+n.d+.05);});}
-    var ci=0;
-    function scheduleBar(t){if(!musicPlaying)return;playChord(ci,t);playArp(ci,t);playBass(ci,t);ci++;var next=t+bar,ms=(next-ctx.currentTime)*1000-150;setTimeout(function(){scheduleBar(next);},Math.max(0,ms));}
-    scheduleBar(ctx.currentTime+.1);
-  }catch(e){console.log("music",e);}
+// ─── MUSIC (MP3) ─────────────────────────────────────────────────────────────
+var musicPlaying = false;
+var musicAudio = null;
+var MUSIC_URL = "https://raw.githubusercontent.com/subrat-manna/Ipl-2026/main/music.mp3";
+
+function startMusic() {
+  try {
+    if (!musicAudio) {
+      musicAudio = new Audio(MUSIC_URL);
+      musicAudio.loop = true;
+      musicAudio.volume = 0.4;
+    }
+    musicAudio.play().catch(function(e){ console.log("music play error:", e); });
+  } catch(e) { console.log("music error:", e); }
 }
-function stopMusic(){
-  musicPlaying=false;
-  if(musicGain){try{musicGain.gain.exponentialRampToValueAtTime(.001,getAudioCtx().currentTime+.5);}catch(e){}}
+
+function stopMusic() {
+  musicPlaying = false;
+  if (musicAudio) {
+    musicAudio.pause();
+    musicAudio.currentTime = 0;
+  }
 }
-function toggleMusic(){
-  var btn=document.getElementById("music-btn");
-  musicPlaying=!musicPlaying;
-  if(musicPlaying){getAudioCtx().resume().then(function(){startMusic();if(btn){btn.textContent="🔊";btn.classList.add("music-on");}});}
-  else{stopMusic();if(btn){btn.textContent="🔇";btn.classList.remove("music-on");}}
+
+function toggleMusic() {
+  var btn = document.getElementById("music-btn");
+  musicPlaying = !musicPlaying;
+  if (musicPlaying) {
+    startMusic();
+    if (btn) { btn.textContent = "🔊"; btn.classList.add("music-on"); }
+  } else {
+    stopMusic();
+    if (btn) { btn.textContent = "🔇"; btn.classList.remove("music-on"); }
+  }
 }
 
 // ─── RIPPLE + BUTTONS ────────────────────────────────────────────────────────
