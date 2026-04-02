@@ -146,8 +146,9 @@ function goRegister() {
   if(display) display.style.display = "none";
   var search = document.getElementById("name-search");
   if(search) search.value = "";
-  renderNameChips("");
   showPage("register");
+  // Render chips after page is visible
+  setTimeout(function(){ renderNameChips(""); }, 50);
 }
 
 function goPayment() {
