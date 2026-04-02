@@ -281,7 +281,13 @@ function openConfirm(title, desc, label, cb) {
   document.getElementById("confirm-dialog").classList.add("open");
 }
 function closeConfirm() { document.getElementById("confirm-dialog").classList.remove("open"); _confirmCb=null; }
-function confirmOk() { closeConfirm(); if(_confirmCb) _confirmCb(); }
+window.closeConfirm = closeConfirm;
+function confirmOk() {
+  var fn = _confirmCb;  // save BEFORE closeConfirm nulls it
+  closeConfirm();
+  if(fn) fn();
+}
+window.confirmOk = confirmOk;
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function $set(id,val,html) { var el=document.getElementById(id); if(!el)return; html?el.innerHTML=val:el.textContent=val; }
