@@ -181,7 +181,7 @@ function goPayment() {
 
   // PhonePe link for iOS
   var phonepeLink = upiId
-    ? "phonepe://pay?pa="+encodeURIComponent(upiId)+"&pn=Subrat%20Manna&am="+c.fee+"&tn=IPL+Contest&cu=INR"
+    ? "phonepe://"
     : "#";
   document.getElementById("phonepe-link").href = phonepeLink;
 
