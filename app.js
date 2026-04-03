@@ -246,7 +246,8 @@ function confirmPayment() {
   var c=cfg();
   var btn=document.getElementById("pay-confirm-btn");
   btn.disabled=true; btn.textContent="Saving…";
-  var safeId = currentUser.name.toLowerCase().replace(/\s+/g,"_")+"_"+Date.now();
+  //var safeId = currentUser.name.toLowerCase().replace(/\s+/g,"_")+"_"+Date.now();
+  var safeId = currentUser.name.toLowerCase().replace(/\s+/g,"_");
   db.collection("currentMatch").doc(activeSlot).collection("players").doc(safeId).set(currentUser)
   .then(function(){
     playSound("success");
