@@ -180,9 +180,8 @@ function goPayment() {
   document.getElementById("upi-link-anchor").href = upiLink;
 
   // PhonePe link for iOS
-  var phonepeLink = upiId
-    ? "phonepe://"
-    : "#";
+  var phonepeLink = "phonepe://"
+  
   document.getElementById("phonepe-link").href = phonepeLink;
 
   // Show UPI ID on payment page
