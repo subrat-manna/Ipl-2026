@@ -307,6 +307,22 @@ function renderAll() {
       }).join("");
     }
   }
+  var notJoinedEl = document.getElementById("not-joined-list");
+  var notJoinedSection = document.getElementById("not-joined-section");
+  if(notJoinedEl && PLAYER_NAMES.length > 0) {
+    var joinedNames = p.map(function(pl){ return pl.name.toLowerCase(); });
+    var notJoined = PLAYER_NAMES.filter(function(n){ return joinedNames.indexOf(n.toLowerCase()) === -1; });
+    if(notJoined.length === 0) {
+      notJoinedSection.style.display = "none";
+    } else {
+      notJoinedSection.style.display = "block";
+      notJoinedEl.innerHTML = notJoined.map(function(n){
+        return '<span style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;'+
+          'background:rgba(230,57,70,.08);border:1px solid rgba(230,57,70,.2);color:var(--red);">'+
+          n+'</span>';
+      }).join("");
+    }
+  }
   renderMatchTabs();
 }
 
