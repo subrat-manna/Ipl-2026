@@ -2,7 +2,7 @@
 // Add or remove names here. Push to GitHub to update.
 var PLAYER_NAMES = [
   "Ronnie","Rakesh","MajorSaab","Sanju007","Papumav",
-  "Samrat","Nihar","Naruto","CheaterAbhii","Manna","Sipun","Raka@kaaka","Jammydips"
+  "Samrat","Nihar","Naruto","CheaterAbhii","Manna","Sipun","Raka@kaaka","Jammydips","Sanu"
 ];
 
 // ─── NAVIGATION ──────────────────────────────────────────────────────────────
