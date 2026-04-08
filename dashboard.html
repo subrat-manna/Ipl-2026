@@ -175,6 +175,23 @@ body::before{content:"";position:fixed;inset:0;
 .rank-pill.rp3{background:rgba(205,127,50,.12);border:1px solid rgba(205,127,50,.3);color:#CD7F32;}
 .rank-pill.rpo{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted);}
 .rank-pill-count{font-family:'Bebas Neue';font-size:15px;}
+
+/* ── RANK BREAKDOWN STATS ───────────────────── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-box{background:rgba(255,255,255,.04);border-radius:10px;padding:10px 8px;text-align:center;}
+.stat-box-val{font-family:'Bebas Neue';font-size:18px;line-height:1.1;}
+.stat-box-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:3px;}
+.stat-box-val.green{color:var(--green);}.stat-box-val.gold{color:var(--gold);}
+.stat-box-val.red{color:var(--red);}.stat-box-val.muted{color:var(--muted);}
+.streak-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;
+  border-radius:16px;font-size:11px;font-weight:700;}
+.streak-fire{background:rgba(255,100,0,.15);border:1px solid rgba(255,100,0,.3);color:#ff6400;}
+.streak-cold{background:rgba(0,180,255,.1);border:1px solid rgba(0,180,255,.25);color:#00b4ff;}
+.streak-neutral{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--muted);}
+.streak-rank-chip{font-family:'Bebas Neue';font-size:12px;padding:2px 6px;border-radius:6px;margin:0 1px;}
+.streak-rank-chip.won{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.2);}
+.streak-rank-chip.lost{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.08);}
+.rk-section-lbl{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -411,6 +428,34 @@ function toggleRow(detailId, arrowId) {
 
 
 // ── RANK BREAKDOWN ────────────────────────────────────────────────────
+function winRate(p){
+  var wins=p.matchHistory.filter(function(m){return m.prize>0;}).length;
+  return Math.round((wins/p.matchHistory.length)*100);
+}
+
+function consistency(p){
+  var ranks=p.matchHistory.map(function(m){return m.rank;});
+  var mean=ranks.reduce(function(s,r){return s+r;},0)/ranks.length;
+  var sd=Math.sqrt(ranks.reduce(function(s,r){return s+Math.pow(r-mean,2);},0)/ranks.length);
+  if(sd<2)   return {label:"🎯 Very Consistent",cls:"green"};
+  if(sd<3.5) return {label:"✅ Consistent",cls:"gold"};
+  if(sd<5.5) return {label:"⚡ Variable",cls:"muted"};
+  return {label:"🎲 Unpredictable",cls:"red"};
+}
+
+function streak(p){
+  var sorted=p.matchHistory.slice().sort(function(a,b){return a.matchNumber-b.matchNumber;});
+  var last4=sorted.slice(-4);
+  if(last4.length<2) return {type:"neutral",html:"—"};
+  var prizes=last4.filter(function(m){return m.prize>0;}).length;
+  if(prizes>=3) return {type:"fire",html:"🔥 On Fire ("+prizes+"/"+last4.length+" prizes)"};
+  if(prizes===0) return {type:"cold",html:"❄️ Cold Streak"};
+  var chips=last4.map(function(m){
+    return '<span class="streak-rank-chip '+(m.prize>0?"won":"lost")+'">#'+m.rank+'</span>';
+  }).join("");
+  return {type:"neutral",html:'<span style="font-size:10px;color:var(--muted);">Last '+last4.length+': </span>'+chips};
+}
+
 function renderRankBreakdown() {
   var list = document.getElementById("rank-list");
   if(!list) return;
@@ -418,7 +463,7 @@ function renderRankBreakdown() {
     var ca=rankCounts(a), cb=rankCounts(b);
     if((cb[1]||0)!==(ca[1]||0)) return (cb[1]||0)-(ca[1]||0);
     if((cb[2]||0)!==(ca[2]||0)) return (cb[2]||0)-(ca[2]||0);
-    return (cb[3]||0)-(ca[3]||0);
+    return winRate(b)-winRate(a);
   });
   if(sorted.length===0){
     list.innerHTML='<div class="no-data"><div class="icon">🏏</div>No data yet.</div>';
@@ -432,6 +477,9 @@ function renderRankBreakdown() {
   list.innerHTML=sorted.map(function(p){
     var c=rankCounts(p);
     var allRanks=Object.keys(c).map(Number).sort(function(a,b){return a-b;});
+    var wr=winRate(p);
+    var cons=consistency(p);
+    var st=streak(p);
     var pills=allRanks.map(function(r){
       var cls=r==1?"rk-p1":r==2?"rk-p2":r==3?"rk-p3":"rk-po";
       var emoji=r==1?"🥇":r==2?"🥈":r==3?"🥉":"";
@@ -449,6 +497,7 @@ function renderRankBreakdown() {
         '<div class="rk-bar-count">'+c[r]+'</div>'+
       '</div>';
     }).join("");
+    var stCls=st.type==="fire"?"streak-fire":st.type==="cold"?"streak-cold":"streak-neutral";
     return '<div class="rank-player-card">'+
       '<div class="rank-player-top">'+
         '<div class="rank-player-avatar">'+initials(p.name)+'</div>'+
@@ -456,11 +505,22 @@ function renderRankBreakdown() {
           '<div class="rank-player-name">'+esc(p.name)+'</div>'+
           '<div class="rank-player-matches">'+p.matches+' matches played</div>'+
         '</div>'+
-        '<div style="text-align:right;">'+
-          '<div class="rank-player-best">#'+bestRank(p)+'</div>'+
-          '<div class="rank-player-best-lbl">Best</div>'+
+      '</div>'+
+      '<div class="stats-row">'+
+        '<div class="stat-box">'+
+          '<div class="stat-box-val '+(wr>=60?"green":wr>=30?"gold":"red")+'">'+wr+'%</div>'+
+          '<div class="stat-box-lbl">Win Rate</div>'+
+        '</div>'+
+        '<div class="stat-box">'+
+          '<div class="stat-box-val '+cons.cls+'" style="font-size:11px;line-height:1.3;">'+cons.label+'</div>'+
+          '<div class="stat-box-lbl">Consistency</div>'+
+        '</div>'+
+        '<div class="stat-box">'+
+          '<div class="streak-badge '+stCls+'" style="margin:0 auto 2px;">'+st.html+'</div>'+
+          '<div class="stat-box-lbl">Last 4 Matches</div>'+
         '</div>'+
       '</div>'+
+      '<div class="rk-section-lbl">Rank Breakdown</div>'+
       '<div class="rk-pills-wrap">'+pills+'</div>'+
       '<div class="rk-bars">'+bars+'</div>'+
     '</div>';
