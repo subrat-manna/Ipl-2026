@@ -280,10 +280,22 @@ var db = firebase.firestore();
 try { db.settings({ experimentalForceLongPolling: true }); } catch(e) {}
 
 // ── BOOT ──────────────────────────────────────────────────────────────
+// Safety timeout — always hide loader after 8 seconds no matter what
+setTimeout(function(){
+  var l=document.getElementById("loader");
+  if(l) l.style.display="none";
+}, 8000);
+
 db.collection("history").orderBy("matchNumber","asc").onSnapshot(function(snap) {
-  historyList = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
-  buildPlayerStats();
-  renderAll();
+  try {
+    historyList = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+    buildPlayerStats();
+    renderAll();
+  } catch(err) {
+    console.error("Dashboard render error:", err);
+    document.getElementById("combined-list").innerHTML =
+      '<div class="no-data"><div class="icon">⚠️</div>Render error: ' + err.message + '</div>';
+  }
   document.getElementById("loader").style.display = "none";
 }, function(e) {
   document.getElementById("loader").style.display = "none";
