@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Contest — Season Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#FFD700;--gold2:#FFA500;--gold3:#FF8C00;
+  --blue:#060d1a;--blue2:#0a1628;--blue3:#0d2040;
+  --green:#2ecc71;--red:#e63946;--text:#e8eaf0;--muted:#7a8499;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--blue);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+body::before{content:"";position:fixed;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(255,140,0,.1) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 90%,rgba(124,58,237,.08) 0%,transparent 60%);
+  pointer-events:none;z-index:0;}
+
+/* ── LOADER ─────────────────────────────────── */
+#loader{position:fixed;inset:0;background:var(--blue);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.loader-ball{font-size:52px;animation:bounce 1s ease-in-out infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0) rotate(-10deg);}50%{transform:translateY(-20px) rotate(10deg);}}
+.loader-bar{width:180px;height:3px;background:rgba(255,215,0,.1);border-radius:2px;overflow:hidden;}
+.loader-bar::after{content:"";display:block;height:100%;
+  background:linear-gradient(90deg,var(--gold2),var(--gold),var(--gold2));
+  animation:sweep 1.4s ease-in-out infinite;background-size:200% 100%;}
+@keyframes sweep{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.loader-text{font-family:'Bebas Neue';font-size:14px;letter-spacing:4px;color:rgba(255,215,0,.6);
+  animation:pulse 1.4s ease-in-out infinite alternate;}
+@keyframes pulse{from{opacity:.4}to{opacity:1}}
+
+/* ── NAV ────────────────────────────────────── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;
+  background:rgba(6,13,26,.92);border-bottom:1px solid rgba(255,215,0,.12);
+  position:sticky;top:0;z-index:200;backdrop-filter:blur(20px);}
+.nav::after{content:"";position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),rgba(255,165,0,.5),transparent);}
+.nav-logo{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--gold);}
+.nav-logo span{color:var(--text);}
+.nav-back{font-family:'Rajdhani';font-size:12px;font-weight:700;letter-spacing:1px;
+  color:var(--muted);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  padding:7px 14px;border-radius:20px;cursor:pointer;transition:.25s;text-decoration:none;}
+.nav-back:hover{color:var(--gold);border-color:var(--gold);}
+
+/* ── TAB SWITCHER ───────────────────────────── */
+.tab-switcher{display:flex;gap:0;margin:16px 16px 0;background:rgba(255,255,255,.04);
+  border-radius:14px;padding:4px;border:1px solid rgba(255,255,255,.07);}
+.tab-btn{flex:1;padding:10px;border-radius:10px;font-family:'Rajdhani';font-size:14px;
+  font-weight:700;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:.25s;}
+.tab-btn.active{background:rgba(255,215,0,.12);color:var(--gold);box-shadow:0 0 12px rgba(255,215,0,.1);}
+
+/* ── RANK BREAKDOWN TAB ─────────────────────── */
+.rank-header{background:linear-gradient(135deg,rgba(255,215,0,.08),rgba(255,165,0,.04));
+  border:1px solid rgba(255,215,0,.15);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
+.rank-header-title{font-family:'Bebas Neue';font-size:20px;letter-spacing:2px;color:var(--gold);}
+.rank-header-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.rank-player-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:14px;padding:14px;margin-bottom:10px;}
+.rank-player-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.rank-player-avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:14px;
+  color:var(--gold);background:rgba(255,215,0,.1);border:1.5px solid rgba(255,215,0,.2);}
+.rank-player-name{font-weight:700;font-size:15px;flex:1;}
+.rank-player-matches{font-size:11px;color:var(--muted);}
+.rank-player-best{font-family:'Bebas Neue';font-size:18px;color:var(--gold);}
+.rank-player-best-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.rk-pills-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.rk-p{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;}
+.rk-p1{background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.35);color:var(--gold);}
+.rk-p2{background:rgba(192,192,192,.1);border:1px solid rgba(192,192,192,.3);color:#C0C0C0;}
+.rk-p3{background:rgba(205,127,50,.12);border:1px solid rgba(205,127,50,.35);color:#CD7F32;}
+.rk-po{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--muted);}
+.rk-count{font-family:'Bebas Neue';font-size:18px;line-height:1;}
+.rk-bars{margin-top:4px;}
+.rk-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.rk-bar-lbl{font-size:12px;font-weight:700;width:28px;text-align:right;flex-shrink:0;}
+.rk-bar-lbl.r1{color:var(--gold);}.rk-bar-lbl.r2{color:#C0C0C0;}
+.rk-bar-lbl.r3{color:#CD7F32;}.rk-bar-lbl.ro{color:var(--muted);}
+.rk-bar-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.rk-bar-fill{height:100%;border-radius:4px;}
+.rk-bar-fill.r1{background:linear-gradient(90deg,var(--gold3),var(--gold));}
+.rk-bar-fill.r2{background:linear-gradient(90deg,#888,#C0C0C0);}
+.rk-bar-fill.r3{background:linear-gradient(90deg,#8B4513,#CD7F32);}
+.rk-bar-fill.ro{background:rgba(255,255,255,.15);}
+.rk-bar-count{font-family:'Bebas Neue';font-size:14px;color:var(--muted);width:20px;flex-shrink:0;}
+
+/* ── MAIN CONTENT ───────────────────────────── */
+.content{padding:0 16px 80px;position:relative;z-index:1;max-width:540px;margin:0 auto;}
+.view{display:none;}
+.view.active{display:block;animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SEASON HEADER ──────────────────────────── */
+.season-header{background:linear-gradient(135deg,rgba(255,215,0,.08),rgba(255,165,0,.04));
+  border:1px solid rgba(255,215,0,.15);border-radius:16px;padding:16px;margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.season-title{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--gold);}
+.season-meta{font-size:12px;color:var(--muted);}
+.season-stats{display:flex;gap:16px;}
+.sstat{text-align:center;}
+.sstat-val{font-family:'Bebas Neue';font-size:22px;color:var(--gold);}
+.sstat-lbl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── COMBINED LEADERBOARD ───────────────────── */
+.lb-row{background:rgba(255,255,255,.03);border-radius:14px;margin-bottom:10px;
+  border:1px solid rgba(255,255,255,.06);overflow:hidden;cursor:pointer;transition:.2s;}
+.lb-row:hover{border-color:rgba(255,215,0,.15);background:rgba(255,215,0,.03);}
+.lb-row.rank1{border-color:rgba(255,215,0,.3);background:linear-gradient(135deg,rgba(255,215,0,.07),rgba(255,165,0,.03));}
+.lb-row.rank2{border-color:rgba(192,192,192,.2);}
+.lb-row.rank3{border-color:rgba(205,127,50,.2);}
+.lb-header-row{display:flex;align-items:center;gap:10px;padding:14px;}
+.lb-rank{font-family:'Bebas Neue';font-size:24px;width:32px;flex-shrink:0;}
+.rank1 .lb-rank{color:#FFD700;} .rank2 .lb-rank{color:#C0C0C0;} .rank3 .lb-rank{color:#CD7F32;}
+.lb-rank-other{color:var(--muted);}
+.lb-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:16px;
+  color:var(--gold);background:rgba(255,215,0,.1);border:1.5px solid rgba(255,215,0,.25);}
+.rank1 .lb-avatar{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.5);
+  box-shadow:0 0 16px rgba(255,215,0,.2);}
+.lb-info{flex:1;min-width:0;}
+.lb-name{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lb-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.lb-right{text-align:right;flex-shrink:0;}
+.lb-won{font-family:'Bebas Neue';font-size:20px;color:var(--green);}
+.lb-pnl{font-size:12px;font-weight:700;}
+.lb-pnl.pos{color:var(--green);} .lb-pnl.neg{color:var(--red);}
+.lb-arrow{color:var(--muted);font-size:12px;margin-left:6px;transition:.3s;}
+.lb-arrow.open{transform:rotate(180deg);}
+
+/* ── EXPANDED DETAIL ────────────────────────── */
+.lb-detail{display:none;padding:0 14px 14px;border-top:1px solid rgba(255,255,255,.05);}
+.lb-detail.open{display:block;}
+.detail-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;margin-top:12px;}
+.dstat{background:rgba(255,255,255,.04);border-radius:10px;padding:10px;text-align:center;}
+.dstat-val{font-family:'Bebas Neue';font-size:20px;}
+.dstat-val.gold{color:var(--gold);} .dstat-val.green{color:var(--green);} .dstat-val.red{color:var(--red);}
+.dstat-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+.match-hist-title{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.match-hist-row{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:rgba(255,255,255,.02);border-radius:8px;margin-bottom:5px;font-size:13px;}
+.mh-num{font-family:'Bebas Neue';font-size:13px;color:var(--muted);width:24px;}
+.mh-teams{flex:1;font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mh-rank{font-family:'Bebas Neue';font-size:16px;color:var(--gold);width:36px;text-align:center;}
+.mh-prize{font-weight:700;font-size:13px;width:44px;text-align:right;}
+.mh-prize.won{color:var(--green);} .mh-prize.none{color:var(--muted);}
+.sparkline{display:flex;align-items:flex-end;gap:3px;height:24px;margin-top:10px;margin-bottom:4px;}
+.spark{flex:1;border-radius:2px 2px 0 0;min-height:3px;transition:.3s;}
+.spark.won{background:var(--green);} .spark.lost{background:rgba(255,255,255,.1);}
+
+
+/* ── TOAST ──────────────────────────────────── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1a4a2a;color:var(--green);border:1px solid rgba(46,204,113,.3);
+  padding:10px 24px;border-radius:30px;font-weight:700;font-size:13px;
+  z-index:9999;opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── NO DATA ────────────────────────────────── */
+.no-data{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
+.no-data .icon{font-size:48px;margin-bottom:12px;}
+
+/* ── RANK COUNTS ────────────────────────────── */
+.rank-section-title{font-size:10px;color:var(--muted);letter-spacing:1.5px;
+  text-transform:uppercase;margin:14px 0 8px;}
+.rank-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;}
+.rank-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:16px;font-size:12px;font-weight:700;}
+.rank-pill.rp1{background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.3);color:var(--gold);}
+.rank-pill.rp2{background:rgba(192,192,192,.1);border:1px solid rgba(192,192,192,.25);color:#C0C0C0;}
+.rank-pill.rp3{background:rgba(205,127,50,.12);border:1px solid rgba(205,127,50,.3);color:#CD7F32;}
+.rank-pill.rpo{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted);}
+.rank-pill-count{font-family:'Bebas Neue';font-size:15px;}
+
+/* ── RANK BREAKDOWN STATS ───────────────────── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat-box{background:rgba(255,255,255,.04);border-radius:10px;padding:10px 8px;text-align:center;}
+.stat-box-val{font-family:'Bebas Neue';font-size:18px;line-height:1.1;}
+.stat-box-lbl{font-size:9px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-top:3px;}
+.stat-box-val.green{color:var(--green);}.stat-box-val.gold{color:var(--gold);}
+.stat-box-val.red{color:var(--red);}.stat-box-val.muted{color:var(--muted);}
+.streak-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;
+  border-radius:16px;font-size:11px;font-weight:700;}
+.streak-fire{background:rgba(255,100,0,.15);border:1px solid rgba(255,100,0,.3);color:#ff6400;}
+.streak-cold{background:rgba(0,180,255,.1);border:1px solid rgba(0,180,255,.25);color:#00b4ff;}
+.streak-neutral{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--muted);}
+.streak-rank-chip{font-family:'Bebas Neue';font-size:12px;padding:2px 6px;border-radius:6px;margin:0 1px;}
+.streak-rank-chip.won{background:rgba(46,204,113,.12);color:var(--green);border:1px solid rgba(46,204,113,.2);}
+.streak-rank-chip.lost{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid rgba(255,255,255,.08);}
+.rk-section-lbl{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-ball">🏏</div>
+  <div class="loader-bar"></div>
+  <div class="loader-text">Loading Dashboard</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">IPL <span>STATS</span></div>
+  <a href="index.html" class="nav-back">← Back to App</a>
+</nav>
+
+<!-- TAB SWITCHER -->
+<div class="tab-switcher">
+  <button class="tab-btn active" onclick="switchView('combined',this)">📊 Season Stats</button>
+  <button class="tab-btn" onclick="switchView('ranks',this)">🎯 Rank Breakdown</button>
+</div>
+
+<div class="content">
+
+  <!-- ── COMBINED VIEW ──────────────────────────────────────────────── -->
+  <div id="view-combined" class="view active">
+    <div class="season-header">
+      <div>
+        <div class="season-title">🏆 Season Leaderboard</div>
+        <div class="season-meta">All time · ₹10 entry per match</div>
+      </div>
+      <div class="season-stats">
+        <div class="sstat"><div class="sstat-val" id="stat-matches">—</div><div class="sstat-lbl">Matches</div></div>
+        <div class="sstat"><div class="sstat-val" id="stat-players">—</div><div class="sstat-lbl">Players</div></div>
+        <div class="sstat"><div class="sstat-val" id="stat-pool">—</div><div class="sstat-lbl">Pool ₹</div></div>
+      </div>
+    </div>
+    <div id="combined-list">
+      <div class="no-data"><div class="icon">🏏</div>Loading match history...</div>
+    </div>
+  </div>
+
+  <!-- ── RANK BREAKDOWN VIEW ──────────────────────────────────────────── -->
+  <div id="view-ranks" class="view">
+    <div class="rank-header">
+      <div class="rank-header-title">🎯 Rank Breakdown</div>
+      <div class="rank-header-sub">How many times each player finished at each rank</div>
+    </div>
+    <div id="rank-list">
+      <div class="no-data"><div class="icon">🏏</div>Loading...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+var ENTRY_FEE = 10;
+var historyList = [];
+var playerStats = {}; // keyed by player name
+
+// ── FIREBASE ──────────────────────────────────────────────────────────
+var firebaseConfig = {
+  apiKey: "AIzaSyDxn6NJHiC-KET_k-Dy5inlLKzDldNCuEs",
+  authDomain: "ipl-contest-d496b.firebaseapp.com",
+  projectId: "ipl-contest-d496b",
+  storageBucket: "ipl-contest-d496b.firebasestorage.app",
+  messagingSenderId: "116370990418",
+  appId: "1:116370990418:web:d87223719d2db5d4fe868b"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+try { db.settings({ experimentalForceLongPolling: true }); } catch(e) {}
+
+// ── BOOT ──────────────────────────────────────────────────────────────
+db.collection("history").orderBy("matchNumber","asc").onSnapshot(function(snap) {
+  historyList = snap.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
+  buildPlayerStats();
+  renderAll();
+  document.getElementById("loader").style.display = "none";
+}, function(e) {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("combined-list").innerHTML =
+    '<div class="no-data"><div class="icon">❌</div>Error loading data: ' + e.message + '</div>';
+});
+
+// ── BUILD PLAYER STATS ─────────────────────────────────────────────────
+// Only count matches where player has a rank (contestRank != null)
+function buildPlayerStats() {
+  playerStats = {};
+  historyList.forEach(function(match) {
+    var players = match.players || [];
+    players.forEach(function(p) {
+      // Skip players with no rank for this match
+      if (p.contestRank == null || p.contestRank === "" || p.contestRank === undefined) return;
+
+      if (!playerStats[p.name]) {
+        playerStats[p.name] = { name: p.name, matches: 0, totalWon: 0, matchHistory: [] };
+      }
+      var st = playerStats[p.name];
+      st.matches++;
+      st.totalWon += (p.prizeMoney || 0);
+      st.matchHistory.push({
+        matchNumber: match.matchNumber,
+        teams: match.match || ("Match #" + match.matchNumber),
+        rank: p.contestRank,
+        prize: p.prizeMoney || 0
+      });
+    });
+  });
+}
+
+// ── COMPUTED ──────────────────────────────────────────────────────────
+function invested(st)  { return st.matches * ENTRY_FEE; }
+function netPnL(st)    { return st.totalWon - invested(st); }
+function bestRank(st)  { return st.matchHistory.length ? Math.min.apply(null, st.matchHistory.map(function(m){return m.rank;})) : "—"; }
+function pnlStr(st)    { var v = netPnL(st); return (v >= 0 ? "+" : "") + v; }
+function initials(n)   { return n.substring(0,2).toUpperCase(); }
+
+function getSortedPlayers() {
+  return Object.values(playerStats).sort(function(a,b) {
+    if (b.totalWon !== a.totalWon) return b.totalWon - a.totalWon;
+    return netPnL(b) - netPnL(a);
+  });
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────
+function renderAll() {
+  renderSeasonHeader();
+  renderCombined();
+  renderRankBreakdown();
+}
+
+function renderSeasonHeader() {
+  var sorted = getSortedPlayers();
+  var totalPool = sorted.reduce(function(s,p){ return s + p.totalWon; }, 0);
+  var matchCount = historyList.length;
+  document.getElementById("stat-matches").textContent = matchCount;
+  document.getElementById("stat-players").textContent = sorted.length;
+  document.getElementById("stat-pool").textContent = "₹" + totalPool;
+}
+
+// ── RANK PILLS ───────────────────────────────────────────────────────
+function rankPills(p) {
+  var counts = {};
+  p.matchHistory.forEach(function(m){ counts[m.rank] = (counts[m.rank]||0)+1; });
+  var ranks = Object.keys(counts).map(Number).sort(function(a,b){return a-b;});
+  if(ranks.length === 0) return '';
+  var pills = ranks.map(function(r){
+    var cls = r==1?"rp1":r==2?"rp2":r==3?"rp3":"rpo";
+    var emoji = r==1?"🥇":r==2?"🥈":r==3?"🥉":"";
+    return '<div class="rank-pill '+cls+'">'+
+      '<span class="rank-pill-count">'+counts[r]+'×</span>'+
+      (emoji?'<span>'+emoji+'</span>':'')+'<span>#'+r+'</span>'+
+    '</div>';
+  }).join("");
+  return '<div class="rank-section-title">Contest Rank Breakdown</div>'+
+    '<div class="rank-pills">'+pills+'</div>';
+}
+
+// ── COMBINED LEADERBOARD ─────────────────────────────────────────────
+function renderCombined() {
+  var sorted = getSortedPlayers();
+  var list = document.getElementById("combined-list");
+  if (sorted.length === 0) {
+    list.innerHTML = '<div class="no-data"><div class="icon">🏏</div>No match history yet.<br>Results will appear after the first match.</div>';
+    return;
+  }
+  var medals = ["🥇","🥈","🥉"];
+  list.innerHTML = sorted.map(function(p, i) {
+    var rankClass = i===0?"rank1":i===1?"rank2":i===2?"rank3":"";
+    var pnl = netPnL(p);
+    var maxPrize = Math.max.apply(null, p.matchHistory.map(function(m){return m.prize;}).concat([1]));
+
+    var sparkBars = p.matchHistory.map(function(m) {
+      var h = Math.max(3, Math.round((m.prize / maxPrize) * 24));
+      return '<div class="spark '+(m.prize>0?"won":"lost")+'" style="height:'+h+'px"></div>';
+    }).join("");
+
+    var matchRows = p.matchHistory.slice().sort(function(a,b){return b.matchNumber-a.matchNumber;}).map(function(m) {
+      return '<div class="match-hist-row">'+
+        '<div class="mh-num">#'+m.matchNumber+'</div>'+
+        '<div class="mh-teams">'+esc(m.teams)+'</div>'+
+        '<div class="mh-rank">#'+m.rank+'</div>'+
+        '<div class="mh-prize '+(m.prize>0?"won":"none")+'">'+(m.prize>0?"₹"+m.prize:"—")+'</div>'+
+      '</div>';
+    }).join("");
+
+    return '<div class="lb-row '+rankClass+'" onclick="toggleRow(\'lbd'+i+'\',\'arr'+i+'\')">' +
+      '<div class="lb-header-row">' +
+        '<div class="lb-rank '+(i>2?"lb-rank-other":"")+'">'+(medals[i]||i+1)+'</div>'+
+        '<div class="lb-avatar">'+initials(p.name)+'</div>'+
+        '<div class="lb-info">'+
+          '<div class="lb-name">'+esc(p.name)+'</div>'+
+          '<div class="lb-sub">'+p.matches+' matches · Best #'+bestRank(p)+'</div>'+
+        '</div>'+
+        '<div class="lb-right">'+
+          '<div class="lb-won">₹'+p.totalWon+'</div>'+
+          '<div class="lb-pnl '+(pnl>=0?"pos":"neg")+'">'+pnlStr(p)+'</div>'+
+        '</div>'+
+        '<div class="lb-arrow" id="arr'+i+'">▼</div>'+
+      '</div>'+
+      '<div class="lb-detail" id="lbd'+i+'">'+
+        '<div class="detail-stats">'+
+          '<div class="dstat"><div class="dstat-val gold">₹'+p.totalWon+'</div><div class="dstat-lbl">Total Won</div></div>'+
+          '<div class="dstat"><div class="dstat-val '+(pnl>=0?"green":"red")+'">'+pnlStr(p)+'</div><div class="dstat-lbl">Net P&L</div></div>'+
+          '<div class="dstat"><div class="dstat-val gold">#'+bestRank(p)+'</div><div class="dstat-lbl">Best Rank</div></div>'+
+        '</div>'+
+        '<div class="match-hist-title">Match History (newest first)</div>'+
+        matchRows+
+        '<div class="sparkline">'+sparkBars+'</div>'+
+        '<div style="font-size:10px;color:var(--muted);text-align:center;">Prize per match (green = won)</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+}
+
+function toggleRow(detailId, arrowId) {
+  var d = document.getElementById(detailId);
+  var a = document.getElementById(arrowId);
+  var isOpen = d.classList.contains("open");
+  // Close all others
+  document.querySelectorAll(".lb-detail.open").forEach(function(el){ el.classList.remove("open"); });
+  document.querySelectorAll(".lb-arrow.open").forEach(function(el){ el.classList.remove("open"); });
+  if (!isOpen) { d.classList.add("open"); if(a) a.classList.add("open"); }
+}
+
+
+
+// ── RANK BREAKDOWN ────────────────────────────────────────────────────
+function winRate(p){
+  var wins=p.matchHistory.filter(function(m){return m.prize>0;}).length;
+  return Math.round((wins/p.matchHistory.length)*100);
+}
+
+function consistency(p){
+  var ranks=p.matchHistory.map(function(m){return m.rank;});
+  var mean=ranks.reduce(function(s,r){return s+r;},0)/ranks.length;
+  var sd=Math.sqrt(ranks.reduce(function(s,r){return s+Math.pow(r-mean,2);},0)/ranks.length);
+  if(sd<2)   return {label:"🎯 Very Consistent",cls:"green"};
+  if(sd<3.5) return {label:"✅ Consistent",cls:"gold"};
+  if(sd<5.5) return {label:"⚡ Variable",cls:"muted"};
+  return {label:"🎲 Unpredictable",cls:"red"};
+}
+
+function streak(p){
+  var sorted=p.matchHistory.slice().sort(function(a,b){return a.matchNumber-b.matchNumber;});
+  var last3=sorted.slice(-3);
+  if(last3.length<2) return {type:"neutral",html:"—"};
+  var prizes=last3.filter(function(m){return m.prize>0;}).length;
+  if(prizes>=2) return {type:"fire",html:"🔥 On Fire ("+prizes+"/"+last3.length+" prizes)"};
+  if(prizes===0) return {type:"cold",html:"❄️ Cold Streak (0/"+last3.length+" prizes)"};
+  var chips=last3.map(function(m){
+    return '<span class="streak-rank-chip '+(m.prize>0?"won":"lost")+'">#'+m.rank+'</span>';
+  }).join("");
+  return {type:"neutral",html:'<span style="font-size:10px;color:var(--muted);">Last '+last3.length+': </span>'+chips};
+}
+
+function renderRankBreakdown() {
+  var list = document.getElementById("rank-list");
+  if(!list) return;
+  var sorted = getSortedPlayers().slice().sort(function(a,b){
+    var ca=rankCounts(a), cb=rankCounts(b);
+    if((cb[1]||0)!==(ca[1]||0)) return (cb[1]||0)-(ca[1]||0);
+    if((cb[2]||0)!==(ca[2]||0)) return (cb[2]||0)-(ca[2]||0);
+    return winRate(b)-winRate(a);
+  });
+  if(sorted.length===0){
+    list.innerHTML='<div class="no-data"><div class="icon">🏏</div>No data yet.</div>';
+    return;
+  }
+  var globalMax=1;
+  sorted.forEach(function(p){
+    var c=rankCounts(p);
+    Object.keys(c).forEach(function(r){ if(c[r]>globalMax) globalMax=c[r]; });
+  });
+  list.innerHTML=sorted.map(function(p){
+    var c=rankCounts(p);
+    var allRanks=Object.keys(c).map(Number).sort(function(a,b){return a-b;});
+    var wr=winRate(p);
+    var cons=consistency(p);
+    var st=streak(p);
+    var pills=allRanks.map(function(r){
+      var cls=r==1?"rk-p1":r==2?"rk-p2":r==3?"rk-p3":"rk-po";
+      var emoji=r==1?"🥇":r==2?"🥈":r==3?"🥉":"";
+      return '<div class="rk-p '+cls+'">'+
+        '<span class="rk-count">'+c[r]+'×</span>'+
+        (emoji?'<span>'+emoji+'</span>':'')+'<span>#'+r+'</span>'+
+      '</div>';
+    }).join("");
+    var bars=allRanks.map(function(r){
+      var cls=r==1?"r1":r==2?"r2":r==3?"r3":"ro";
+      var w=Math.round((c[r]/globalMax)*100);
+      return '<div class="rk-bar-row">'+
+        '<div class="rk-bar-lbl '+cls+'">#'+r+'</div>'+
+        '<div class="rk-bar-track"><div class="rk-bar-fill '+cls+'" style="width:'+w+'%"></div></div>'+
+        '<div class="rk-bar-count">'+c[r]+'</div>'+
+      '</div>';
+    }).join("");
+    var stCls=st.type==="fire"?"streak-fire":st.type==="cold"?"streak-cold":"streak-neutral";
+    return '<div class="rank-player-card">'+
+      '<div class="rank-player-top">'+
+        '<div class="rank-player-avatar">'+initials(p.name)+'</div>'+
+        '<div style="flex:1;">'+
+          '<div class="rank-player-name">'+esc(p.name)+'</div>'+
+          '<div class="rank-player-matches">'+p.matches+' matches played</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="stats-row">'+
+        '<div class="stat-box">'+
+          '<div class="stat-box-val '+(wr>=60?"green":wr>=30?"gold":"red")+'">'+wr+'%</div>'+
+          '<div class="stat-box-lbl">Win Rate</div>'+
+        '</div>'+
+        '<div class="stat-box">'+
+          '<div class="stat-box-val '+cons.cls+'" style="font-size:11px;line-height:1.3;">'+cons.label+'</div>'+
+          '<div class="stat-box-lbl">Consistency</div>'+
+        '</div>'+
+        '<div class="stat-box">'+
+          '<div class="streak-badge '+stCls+'" style="margin:0 auto 2px;">'+st.html+'</div>'+
+          '<div class="stat-box-lbl">Last 4 Matches</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="rk-section-lbl">Rank Breakdown</div>'+
+      '<div class="rk-pills-wrap">'+pills+'</div>'+
+      '<div class="rk-bars">'+bars+'</div>'+
+    '</div>';
+  }).join("");
+}
+
+function rankCounts(p){
+  var c={};
+  p.matchHistory.forEach(function(m){ c[m.rank]=(c[m.rank]||0)+1; });
+  return c;
+}
+
+function switchView(v,btn){
+  document.querySelectorAll(".view").forEach(function(el){el.classList.remove("active");});
+  document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});
+  document.getElementById("view-"+v).classList.add("active");
+  if(btn) btn.classList.add("active");
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function showToast(msg) {
+  var t = document.getElementById("toast"); t.textContent = msg;
+  t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); }, 3000);
+}
+</script>
+</body>
+</html>
