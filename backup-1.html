@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPL Contest — Backup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--gold:#FFD700;--blue:#060d1a;--blue2:#0a1628;--green:#2ecc71;--red:#e63946;--text:#e8eaf0;--muted:#7a8499;}
+body{background:var(--blue);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;padding:16px;max-width:500px;margin:0 auto;}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% -10%,rgba(255,140,0,.08) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;position:relative;z-index:1;}
+.nav-logo{font-family:'Bebas Neue';font-size:22px;letter-spacing:2px;color:var(--gold);}
+.nav-logo span{color:var(--text);}
+.nav-back{font-size:12px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);padding:7px 14px;border-radius:20px;cursor:pointer;text-decoration:none;}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:14px;position:relative;z-index:1;}
+.card-title{font-family:'Bebas Neue';font-size:18px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;}
+.card-sub{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6;}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;font-family:'Rajdhani';font-size:15px;font-weight:700;border:none;cursor:pointer;text-align:center;transition:.2s;margin-bottom:8px;}
+.btn:last-child{margin-bottom:0;}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-green{background:linear-gradient(135deg,#1a6e35,var(--green));color:#000;}
+.btn-gold{background:linear-gradient(135deg,#8B6914,var(--gold));color:#000;}
+.btn-blue{background:linear-gradient(135deg,#1a3a6e,#4a90d9);color:white;}
+.btn-purple{background:linear-gradient(135deg,#3a1a6e,#9b59b6);color:white;}
+.btn-outline{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,.1);}
+.status-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px;font-size:13px;color:var(--muted);min-height:48px;line-height:1.8;margin-top:10px;}
+.ok{color:var(--green);} .err{color:var(--red);}
+.progress{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin:8px 0;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#1a6e35,var(--green));width:0%;transition:width .3s;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{color:var(--muted);}
+.stat-val{font-weight:700;color:var(--gold);}
+/* Hall of fame */
+.hof-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.hof-item:last-child{border-bottom:none;}
+.hof-icon{font-size:24px;flex-shrink:0;}
+.hof-name{font-weight:700;font-size:15px;}
+.hof-detail{font-size:11px;color:var(--muted);}
+.hof-val{font-family:'Bebas Neue';font-size:20px;color:var(--gold);margin-left:auto;flex-shrink:0;}
+/* Player table */
+.ptable{width:100%;border-collapse:collapse;font-size:12px;}
+.ptable th{color:var(--muted);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:6px 4px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);}
+.ptable td{padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.04);}
+.ptable tr:hover td{background:rgba(255,215,0,.02);}
+.ptable .won{color:var(--green);font-weight:700;}
+.ptable .loss{color:var(--red);font-weight:700;}
+/* Match table */
+.match-item{background:rgba(255,255,255,.02);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.match-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+.match-meta{font-size:11px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;}
+.match-pool{font-family:'Bebas Neue';font-size:18px;color:var(--gold);}
+/* Recent */
+.recent-item{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;}
+.recent-item:last-child{border-bottom:none;}
+/* File upload */
+.upload-area{border:2px dashed rgba(255,215,0,.2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;transition:.2s;}
+.upload-area:hover{border-color:rgba(255,215,0,.4);background:rgba(255,215,0,.03);}
+.upload-icon{font-size:32px;margin-bottom:8px;}
+.upload-text{font-size:13px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo">IPL <span>BACKUP</span></div>
+  <a href="index.html" class="nav-back">← Back to App</a>
+</div>
+
+<!-- 1. DOWNLOAD BACKUP -->
+<div class="card">
+  <div class="card-title">📦 Download Backup</div>
+  <div class="card-sub">Downloads everything from Firebase as a JSON file. Store it safely.</div>
+  <div class="progress"><div class="progress-fill" id="dl-progress"></div></div>
+  <button class="btn btn-green" id="backup-btn" onclick="downloadBackup()">⬇️ Download JSON Backup</button>
+  <button class="btn btn-blue" id="csv-btn" onclick="downloadCSV()">📊 Download CSV (Excel)</button>
+  <div class="status-box" id="backup-status">Tap a button to download your data.</div>
+</div>
+
+<!-- 2. RESTORE FROM BACKUP -->
+<div class="card">
+  <div class="card-title">🔄 Restore from Backup</div>
+  <div class="card-sub">Upload a previously downloaded JSON backup file to restore history data to Firebase.</div>
+  <div class="upload-area" onclick="document.getElementById('restore-file').click()">
+    <div class="upload-icon">📂</div>
+    <div class="upload-text">Tap to select backup JSON file</div>
+    <div id="restore-filename" style="font-size:12px;color:var(--gold);margin-top:6px;"></div>
+  </div>
+  <input type="file" id="restore-file" accept=".json" style="display:none" onchange="previewRestore(this)">
+  <button class="btn btn-purple" id="restore-btn" onclick="restoreBackup()" disabled>⬆️ Restore History to Firebase</button>
+  <div class="status-box" id="restore-status">Select a backup file first.</div>
+</div>
+
+<!-- 3. DATA SUMMARY -->
+<div class="card">
+  <div class="card-title">📊 Current Data Summary</div>
+  <div class="card-sub">Live count of data in your Firebase.</div>
+  <div id="summary-rows"><div class="stat-row"><span class="stat-label">Loading...</span></div></div>
+  <button class="btn btn-outline" style="margin-top:12px;" onclick="loadAll()">🔄 Refresh</button>
+</div>
+
+<!-- 4. PLAYER PERFORMANCE -->
+<div class="card">
+  <div class="card-title">👤 Player Performance</div>
+  <div class="card-sub">Financial summary for every player across all matches.</div>
+  <div id="player-table"><div style="color:var(--muted);font-size:13px;">Loading...</div></div>
+</div>
+
+<!-- 5. HALL OF FAME -->
+<div class="card">
+  <div class="card-title">🏆 Hall of Fame</div>
+  <div class="card-sub">Top performers across all time.</div>
+  <div id="hof-list"><div style="color:var(--muted);font-size:13px;">Loading...</div></div>
+</div>
+
+<!-- 6. MATCH PRIZE SUMMARY -->
+<div class="card">
+  <div class="card-title">🎯 Match Prize Summary</div>
+  <div class="card-sub">Prize pool and winner details per match.</div>
+  <div id="match-summary"><div style="color:var(--muted);font-size:13px;">Loading...</div></div>
+</div>
+
+<!-- 7. LAST 7 DAYS -->
+<div class="card">
+  <div class="card-title">📅 Last 7 Days Activity</div>
+  <div class="card-sub">Matches played in the last 7 days.</div>
+  <div id="recent-activity"><div style="color:var(--muted);font-size:13px;">Loading...</div></div>
+</div>
+
+<!-- 8. LAST BACKUP -->
+<div class="card">
+  <div class="card-title">🕐 Last Backup</div>
+  <div id="last-backup-info" class="card-sub" style="margin-bottom:0;">No backup recorded yet.</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyDxn6NJHiC-KET_k-Dy5inlLKzDldNCuEs",
+  authDomain: "ipl-contest-d496b.firebaseapp.com",
+  projectId: "ipl-contest-d496b",
+  storageBucket: "ipl-contest-d496b.firebasestorage.app",
+  messagingSenderId: "116370990418",
+  appId: "1:116370990418:web:d87223719d2db5d4fe868b"
+};
+firebase.initializeApp(firebaseConfig);
+var db = firebase.firestore();
+try { db.settings({ experimentalForceLongPolling: true }); } catch(e) {}
+
+var cachedHistory = [];
+var cachedUsers   = [];
+var restoreData   = null;
+
+function setProgress(id, pct){ document.getElementById(id).style.width = pct+"%"; }
+function setStatus(id, msg, type){
+  var el=document.getElementById(id);
+  el.innerHTML='<span class="'+(type||"")+'">'+msg+'</span>';
+}
+
+function dateFilename(ext){
+  var n=new Date();
+  return "ipl-backup-"+n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")+"."+ext;
+}
+
+function downloadBlob(content, filename, mime){
+  var blob=new Blob([content],{type:mime});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a"); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// ── FETCH ALL DATA ────────────────────────────────────────────
+async function fetchAllData(){
+  var histSnap = await db.collection("history").orderBy("matchNumber","asc").get();
+  var history  = histSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+
+  var currentMatch = {};
+  for(var slot of ["match1","match2"]){
+    var s  = await db.collection("currentMatch").doc(slot).get();
+    var ps = await db.collection("currentMatch").doc(slot).collection("players").get();
+    currentMatch[slot]            = s.exists ? s.data() : null;
+    currentMatch[slot+"_players"] = ps.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+  }
+
+  var usersSnap = await db.collection("users").get();
+  var users = usersSnap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); });
+
+  return { history, currentMatch, users };
+}
+
+// ── DOWNLOAD JSON ─────────────────────────────────────────────
+async function downloadBackup(){
+  var btn=document.getElementById("backup-btn"); btn.disabled=true;
+  setProgress("dl-progress",5); setStatus("backup-status","Starting backup...");
+  try{
+    setProgress("dl-progress",20); setStatus("backup-status","Fetching data...");
+    var d = await fetchAllData();
+    setProgress("dl-progress",80);
+    var backup = {
+      exportedAt: new Date().toISOString(),
+      exportedAtReadable: new Date().toLocaleString("en-IN"),
+      version:"1.0", data: d
+    };
+    downloadBlob(JSON.stringify(backup,null,2), dateFilename("json"), "application/json");
+    setProgress("dl-progress",100);
+    setStatus("backup-status","✓ JSON backup downloaded! "+d.history.length+" matches · "+d.users.length+" users","ok");
+    localStorage.setItem("lastBackup", new Date().toLocaleString("en-IN"));
+    updateLastBackup();
+  }catch(e){ setStatus("backup-status","❌ "+e.message,"err"); }
+  btn.disabled=false; setTimeout(function(){ setProgress("dl-progress",0); },2000);
+}
+
+// ── DOWNLOAD CSV ──────────────────────────────────────────────
+async function downloadCSV(){
+  var btn=document.getElementById("csv-btn"); btn.disabled=true;
+  setStatus("backup-status","Building CSV...");
+  try{
+    var d = await fetchAllData();
+    var rows=["Match Number,Match,Date,Player,Rank,Prize Won,Entry Fee,Net P&L"];
+    d.history.forEach(function(m){
+      (m.players||[]).forEach(function(p){
+        var fee=10, prize=p.prizeMoney||0, pnl=prize-fee;
+        rows.push([m.matchNumber,'"'+(m.match||"")+'\"',m.date||"",'"'+p.name+'"',p.contestRank||"",prize,fee,pnl].join(","));
+      });
+    });
+    downloadBlob(rows.join("\n"), dateFilename("csv"), "text/csv");
+    setStatus("backup-status","✓ CSV downloaded! Open with Excel or Google Sheets.","ok");
+  }catch(e){ setStatus("backup-status","❌ "+e.message,"err"); }
+  btn.disabled=false;
+}
+
+// ── RESTORE ───────────────────────────────────────────────────
+function previewRestore(input){
+  var file=input.files[0]; if(!file) return;
+  document.getElementById("restore-filename").textContent="📄 "+file.name;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      restoreData=JSON.parse(e.target.result);
+      var count=restoreData.data&&restoreData.data.history?restoreData.data.history.length:0;
+      setStatus("restore-status","✓ File loaded: "+count+" matches found. Tap Restore to upload.","ok");
+      document.getElementById("restore-btn").disabled=false;
+    }catch(err){ setStatus("restore-status","❌ Invalid backup file: "+err.message,"err"); }
+  };
+  reader.readAsText(file);
+}
+
+async function restoreBackup(){
+  if(!restoreData){ setStatus("restore-status","No file loaded.","err"); return; }
+  if(!confirm("This will overwrite existing history in Firebase. Are you sure?")) return;
+  var btn=document.getElementById("restore-btn"); btn.disabled=true;
+  setStatus("restore-status","Restoring...");
+  try{
+    var history=restoreData.data.history||[];
+    var batch=db.batch(); var count=0;
+    for(var m of history){
+      batch.set(db.collection("history").doc(String(m.matchNumber)), m);
+      count++;
+      if(count%400===0){ await batch.commit(); batch=db.batch(); }
+    }
+    await batch.commit();
+    setStatus("restore-status","✓ Restored "+count+" matches to Firebase!","ok");
+    loadAll();
+  }catch(e){ setStatus("restore-status","❌ "+e.message,"err"); }
+  btn.disabled=false;
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+async function loadSummary(){
+  var el=document.getElementById("summary-rows");
+  try{
+    var histSnap  = await db.collection("history").get();
+    var usersSnap = await db.collection("users").get();
+    var m1p = await db.collection("currentMatch").doc("match1").collection("players").get();
+    var m2p = await db.collection("currentMatch").doc("match2").collection("players").get();
+    var m1  = await db.collection("currentMatch").doc("match1").get();
+    var m2  = await db.collection("currentMatch").doc("match2").get();
+    var d1=m1.exists?m1.data():{}, d2=m2.exists?m2.data():{};
+    var totalPool=0;
+    histSnap.docs.forEach(function(d){ var m=d.data(); (m.players||[]).forEach(function(p){ totalPool+=(p.prizeMoney||0); }); });
+    var rows=[
+      {l:"Total matches in history", v:histSnap.size},
+      {l:"Total prize pool distributed", v:"₹"+totalPool},
+      {l:"Registered users", v:usersSnap.size},
+      {l:"Slot 1 — "+(d1.team1||"?")+" vs "+(d1.team2||"?"), v:m1p.size+" players"},
+      {l:"Slot 2 — "+(d2.team1||"?")+" vs "+(d2.team2||"?"), v:m2p.size+" players"},
+    ];
+    el.innerHTML=rows.map(function(r){
+      return '<div class="stat-row"><span class="stat-label">'+r.l+'</span><span class="stat-val">'+r.v+'</span></div>';
+    }).join("");
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">Error: '+e.message+'</div>'; }
+}
+
+// ── PLAYER PERFORMANCE ────────────────────────────────────────
+async function loadPlayerPerformance(){
+  var el=document.getElementById("player-table");
+  try{
+    var snap=await db.collection("history").get();
+    var players={};
+    snap.docs.forEach(function(d){
+      var m=d.data();
+      (m.players||[]).forEach(function(p){
+        if(p.contestRank==null) return;
+        if(!players[p.name]) players[p.name]={name:p.name,matches:0,won:0,entries:0};
+        players[p.name].matches++;
+        players[p.name].won+=(p.prizeMoney||0);
+        players[p.name].entries+=10;
+      });
+    });
+    var sorted=Object.values(players).sort(function(a,b){ return (b.won-b.entries)-(a.won-a.entries); });
+    if(sorted.length===0){ el.innerHTML='<div style="color:var(--muted);font-size:13px;">No data yet.</div>'; return; }
+    el.innerHTML='<table class="ptable">'+
+      '<thead><tr><th>Player</th><th>M</th><th>Won</th><th>Paid</th><th>P&L</th></tr></thead><tbody>'+
+      sorted.map(function(p){
+        var pnl=p.won-p.entries;
+        return '<tr>'+
+          '<td><strong>'+p.name+'</strong></td>'+
+          '<td>'+p.matches+'</td>'+
+          '<td class="won">₹'+p.won+'</td>'+
+          '<td style="color:var(--muted);">₹'+p.entries+'</td>'+
+          '<td class="'+(pnl>=0?"won":"loss")+'">'+(pnl>=0?"+":"")+pnl+'</td>'+
+        '</tr>';
+      }).join("")+
+      '</tbody></table>';
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">Error: '+e.message+'</div>'; }
+}
+
+// ── HALL OF FAME ──────────────────────────────────────────────
+async function loadHallOfFame(){
+  var el=document.getElementById("hof-list");
+  try{
+    var snap=await db.collection("history").get();
+    var players={}, topSingle={name:"",prize:0,match:""};
+    snap.docs.forEach(function(d){
+      var m=d.data();
+      (m.players||[]).forEach(function(p){
+        if(p.contestRank==null) return;
+        if(!players[p.name]) players[p.name]={name:p.name,won:0,wins:0,matches:0};
+        players[p.name].won+=(p.prizeMoney||0);
+        players[p.name].matches++;
+        if(p.contestRank==1) players[p.name].wins++;
+        if((p.prizeMoney||0)>topSingle.prize){
+          topSingle={name:p.name,prize:p.prizeMoney,match:m.match};
+        }
+      });
+    });
+    var sorted=Object.values(players);
+    if(sorted.length===0){ el.innerHTML='<div style="color:var(--muted);font-size:13px;">No data yet.</div>'; return; }
+    var mostWon=sorted.slice().sort(function(a,b){return b.won-a.won;})[0];
+    var mostWins=sorted.slice().sort(function(a,b){return b.wins-a.wins;})[0];
+    var mostMatches=sorted.slice().sort(function(a,b){return b.matches-a.matches;})[0];
+    var hof=[
+      {icon:"💰",label:"Most Prize Money",name:mostWon.name,detail:"₹"+mostWon.won+" total",val:"₹"+mostWon.won},
+      {icon:"🥇",label:"Most #1 Finishes",name:mostWins.name,detail:mostWins.wins+"× first place",val:mostWins.wins+"×"},
+      {icon:"🏏",label:"Most Matches Played",name:mostMatches.name,detail:mostMatches.matches+" matches",val:mostMatches.matches},
+      {icon:"⚡",label:"Biggest Single Win",name:topSingle.name,detail:topSingle.match,val:"₹"+topSingle.prize},
+    ];
+    el.innerHTML=hof.map(function(h){
+      return '<div class="hof-item">'+
+        '<div class="hof-icon">'+h.icon+'</div>'+
+        '<div><div class="hof-name">'+h.name+'</div><div class="hof-detail">'+h.label+' · '+h.detail+'</div></div>'+
+        '<div class="hof-val">'+h.val+'</div>'+
+      '</div>';
+    }).join("");
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">Error: '+e.message+'</div>'; }
+}
+
+// ── MATCH PRIZE SUMMARY ───────────────────────────────────────
+async function loadMatchSummary(){
+  var el=document.getElementById("match-summary");
+  try{
+    var snap=await db.collection("history").orderBy("matchNumber","desc").get();
+    if(snap.empty){ el.innerHTML='<div style="color:var(--muted);font-size:13px;">No matches yet.</div>'; return; }
+    el.innerHTML=snap.docs.map(function(d){
+      var m=d.data();
+      var pool=(m.players||[]).reduce(function(s,p){return s+(p.prizeMoney||0);},0);
+      var winners=(m.players||[]).filter(function(p){return (p.prizeMoney||0)>0;}).length;
+      return '<div class="match-item">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+          '<div class="match-title">Match #'+m.matchNumber+' · '+m.match+'</div>'+
+          '<div class="match-pool">₹'+pool+'</div>'+
+        '</div>'+
+        '<div class="match-meta">'+
+          '<span>📅 '+m.date+'</span>'+
+          '<span>👥 '+m.playerCount+' players</span>'+
+          '<span>🏆 '+winners+' winners</span>'+
+          (m.winner?'<span>🏏 '+m.winner+' Won</span>':'')+
+        '</div>'+
+      '</div>';
+    }).join("");
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">Error: '+e.message+'</div>'; }
+}
+
+// ── LAST 7 DAYS ───────────────────────────────────────────────
+async function loadRecentActivity(){
+  var el=document.getElementById("recent-activity");
+  try{
+    var snap=await db.collection("history").get();
+    var cutoff=new Date(); cutoff.setDate(cutoff.getDate()-7);
+    var recent=snap.docs.map(function(d){ return d.data(); }).filter(function(m){
+      return m.date && new Date(m.date)>=cutoff;
+    }).sort(function(a,b){ return b.matchNumber-a.matchNumber; });
+    if(recent.length===0){
+      el.innerHTML='<div style="color:var(--muted);font-size:13px;">No matches in the last 7 days.</div>';
+      return;
+    }
+    el.innerHTML=recent.map(function(m){
+      var pool=(m.players||[]).reduce(function(s,p){return s+(p.prizeMoney||0);},0);
+      return '<div class="recent-item">'+
+        '<div><div style="font-weight:700;">Match #'+m.matchNumber+' · '+m.match+'</div>'+
+        '<div style="font-size:11px;color:var(--muted);">'+m.date+' · '+m.playerCount+' players</div></div>'+
+        '<div style="font-family:\'Bebas Neue\';font-size:18px;color:var(--gold);">₹'+pool+'</div>'+
+      '</div>';
+    }).join("");
+  }catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">Error: '+e.message+'</div>'; }
+}
+
+function updateLastBackup(){
+  var last=localStorage.getItem("lastBackup");
+  document.getElementById("last-backup-info").textContent=last?"Last backup: "+last:"No backup recorded yet.";
+}
+
+async function loadAll(){
+  await Promise.all([
+    loadSummary(), loadPlayerPerformance(),
+    loadHallOfFame(), loadMatchSummary(), loadRecentActivity()
+  ]);
+}
+
+updateLastBackup();
+loadAll();
+</script>
+</body>
+</html>
