@@ -430,6 +430,7 @@ function renderCombined() {
   list.innerHTML = sorted.map(function(p, i) {
     var rankClass = i===0?"rank1":i===1?"rank2":i===2?"rank3":"";
     var pnl = netPnL(p);
+    var pending = getPending(p.name);
     var maxPrize = Math.max.apply(null, p.matchHistory.map(function(m){return m.prize;}).concat([1]));
 
     var sparkBars = p.matchHistory.map(function(m) {
@@ -446,8 +447,8 @@ function renderCombined() {
       '</div>';
     }).join("");
 
-    return '<div class="lb-row '+rankClass+'" onclick="toggleRow(\'lbd'+i+'\',\'arr'+i+'\')">' +
-      '<div class="lb-header-row">' +
+    return '<div class="lb-row '+rankClass+'" onclick="toggleRow(\'lbd'+i+'\',\'arr'+i+'\')">'+
+      '<div class="lb-header-row">'+
         '<div class="lb-rank '+(i>2?"lb-rank-other":"")+'">'+(medals[i]||i+1)+'</div>'+
         '<div class="lb-avatar">'+initials(p.name)+'</div>'+
         '<div class="lb-info">'+
@@ -457,18 +458,23 @@ function renderCombined() {
         '<div class="lb-right">'+
           '<div class="lb-won">₹'+p.totalWon+'</div>'+
           '<div class="lb-pnl '+(pnl>=0?"pos":"neg")+'">'+pnlStr(p)+'</div>'+
+          (pending>0?'<div class="lb-pending">💸 ₹'+pending+' due</div>':'')+
         '</div>'+
         '<div class="lb-arrow" id="arr'+i+'">▼</div>'+
       '</div>'+
       '<div class="lb-detail" id="lbd'+i+'">'+
+        (pending>0?
+          '<div style="background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">'+
+            '<div><div style="font-size:11px;color:var(--green);font-weight:700;letter-spacing:.5px;text-transform:uppercase;">💸 Pending Transfer</div>'+
+            '<div style="font-size:11px;color:var(--muted);">Prizes from 6 Apr onwards</div></div>'+
+            '<div style="font-family:\'Bebas Neue\';font-size:22px;color:var(--green);">₹'+pending+'</div>'+
+          '</div>'
+        :'')+
         '<div class="detail-stats">'+
-          '<div class="lb-won">₹'+p.totalWon+'</div>'+
-          '<div class="lb-pnl '+(pnl>=0?"pos":"neg")+'">'+pnlStr(p)+'</div>'+
-          '<div style="font-size:11px;font-weight:700;color:var(--green);">'+
-          (getPending(p.name)>0?'💸 ₹'+getPending(p.name):'')+'</div>'+'<div class="dstat-lbl">Net P&L</div></div>'+
+          '<div class="dstat"><div class="dstat-val gold">₹'+p.totalWon+'</div><div class="dstat-lbl">Total Won</div></div>'+
+          '<div class="dstat"><div class="dstat-val '+(pnl>=0?"green":"red")+'">'+pnlStr(p)+'</div><div class="dstat-lbl">Net P&L</div></div>'+
           '<div class="dstat"><div class="dstat-val gold">#'+bestRank(p)+'</div><div class="dstat-lbl">Best Rank</div></div>'+
         '</div>'+
-        rankPills(p)+
         '<div class="match-hist-title">Match History (newest first)</div>'+
         matchRows+
         '<div class="sparkline">'+sparkBars+'</div>'+
