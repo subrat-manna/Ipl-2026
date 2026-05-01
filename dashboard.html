@@ -403,6 +403,20 @@ function rankPills(p) {
   return '<div class="rank-section-title">Contest Rank Breakdown</div>'+
     '<div class="rank-pills">'+pills+'</div>';
 }
+  var pendingCache = {};
+function buildPendingCache() {
+  pendingCache = {};
+  var cutoff = new Date("2026-04-06");
+  historyList.forEach(function(match) {
+    var matchDate = new Date(match.date);
+    if(isNaN(matchDate) || matchDate < cutoff) return;
+    (match.players||[]).forEach(function(p) {
+      if(!p.prizeMoney || p.prizeMoney <= 0) return;
+      pendingCache[p.name] = (pendingCache[p.name]||0) + p.prizeMoney;
+    });
+  });
+}
+function getPending(name) { return pendingCache[name] || 0; }
 
 // ── COMBINED LEADERBOARD ─────────────────────────────────────────────
 function renderCombined() {
@@ -448,8 +462,10 @@ function renderCombined() {
       '</div>'+
       '<div class="lb-detail" id="lbd'+i+'">'+
         '<div class="detail-stats">'+
-          '<div class="dstat"><div class="dstat-val gold">₹'+p.totalWon+'</div><div class="dstat-lbl">Total Won</div></div>'+
-          '<div class="dstat"><div class="dstat-val '+(pnl>=0?"green":"red")+'">'+pnlStr(p)+'</div><div class="dstat-lbl">Net P&L</div></div>'+
+          '<div class="lb-won">₹'+p.totalWon+'</div>'+
+          '<div class="lb-pnl '+(pnl>=0?"pos":"neg")+'">'+pnlStr(p)+'</div>'+
+          '<div style="font-size:11px;font-weight:700;color:var(--green);">'+
+          (getPending(p.name)>0?'💸 ₹'+getPending(p.name):'')+'</div>'+'<div class="dstat-lbl">Net P&L</div></div>'+
           '<div class="dstat"><div class="dstat-val gold">#'+bestRank(p)+'</div><div class="dstat-lbl">Best Rank</div></div>'+
         '</div>'+
         rankPills(p)+
